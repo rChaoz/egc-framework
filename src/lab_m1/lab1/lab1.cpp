@@ -30,8 +30,20 @@ void Lab1::Init()
     // Load a mesh from file into GPU memory. We only need to do it once,
     // no matter how many times we want to draw this mesh.
     {
-        Mesh* mesh = new Mesh("box");
+        Mesh* mesh = new Mesh("cube");
         mesh->LoadMesh(PATH_JOIN(window->props.selfDir, RESOURCE_PATH::MODELS, "primitives"), "box.obj");
+        meshes[mesh->GetMeshID()] = mesh;
+
+        mesh = new Mesh("teapot");
+        mesh->LoadMesh(PATH_JOIN(window->props.selfDir, RESOURCE_PATH::MODELS, "primitives"), "teapot.obj");
+        meshes[mesh->GetMeshID()] = mesh;
+
+        mesh = new Mesh("sphere");
+        mesh->LoadMesh(PATH_JOIN(window->props.selfDir, RESOURCE_PATH::MODELS, "primitives"), "sphere.obj");
+        meshes[mesh->GetMeshID()] = mesh;
+
+        mesh = new Mesh("archer");
+        mesh->LoadMesh(PATH_JOIN(window->props.selfDir, RESOURCE_PATH::MODELS, "characters//archer"), "Archer.fbx");
         meshes[mesh->GetMeshID()] = mesh;
     }
 
@@ -45,6 +57,13 @@ void Lab1::FrameStart()
 {
 }
 
+glm::vec3 archer_pos(0, 0.5f, 0);
+float red = 0.1f;
+
+int meshID = 0;
+float rotation = 0;
+string meshNames[] = { "cube", "teapot", "sphere" };
+
 
 void Lab1::Update(float deltaTimeSeconds)
 {
@@ -55,7 +74,7 @@ void Lab1::Update(float deltaTimeSeconds)
     // TODO(student): Generalize the arguments of `glClearColor`.
     // You can, for example, declare three variables in the class header,
     // that will store the color components (red, green, blue).
-    glClearColor(0, 0, 0, 1);
+    glClearColor(red, 0.1f, 0.1f, 1);
 
     // Clears the color buffer (using the previously set color) and depth buffer
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -64,15 +83,19 @@ void Lab1::Update(float deltaTimeSeconds)
     glViewport(0, 0, resolution.x, resolution.y);
 
     // Render the object
-    RenderMesh(meshes["box"], glm::vec3(1, 0.5f, 0), glm::vec3(0.5f));
+    string mesh = meshNames[meshID];
+    RenderMesh(meshes[mesh], glm::vec3(1, 0.5f, 0), glm::vec3(0.5f));
 
     // Render the object again but with different properties
-    RenderMesh(meshes["box"], glm::vec3(-1, 0.5f, 0));
+    rotation += deltaTimeSeconds * 2;
+
+    RenderMesh(meshes[mesh], glm::vec3(sinf(rotation) * 2, 0.5f, cosf(rotation) * 2));
 
     // TODO(student): We need to render (a.k.a. draw) the mesh that
     // was previously loaded. We do this using `RenderMesh`. Check the
     // signature of this function to see the meaning of its parameters.
     // You can draw the same mesh any number of times.
+    RenderMesh(meshes["archer"], archer_pos, glm::vec3(.007f));
 
 }
 
@@ -96,6 +119,26 @@ void Lab1::OnInputUpdate(float deltaTime, int mods)
     // TODO(student): Add some key hold events that will let you move
     // a mesh instance on all three axes. You will also need to
     // generalize the position used by `RenderMesh`.
+    if (window->KeyHold(GLFW_KEY_W)) {
+        archer_pos.z -= deltaTime;
+    }
+
+    if (window->KeyHold(GLFW_KEY_S)) {
+        archer_pos.z += deltaTime;
+    }
+    if (window->KeyHold(GLFW_KEY_A)) {
+        archer_pos.x -= deltaTime;
+    }
+    if (window->KeyHold(GLFW_KEY_D)) {
+        archer_pos.x += deltaTime;
+    }
+
+    if (window->KeyHold(GLFW_KEY_Q)) {
+        archer_pos.y -= deltaTime;
+    }
+    if (window->KeyHold(GLFW_KEY_E)) {
+        archer_pos.y += deltaTime;
+    }
 
 }
 
@@ -105,13 +148,21 @@ void Lab1::OnKeyPress(int key, int mods)
     // Add key press event
     if (key == GLFW_KEY_F) {
         // TODO(student): Change the values of the color components.
-
+        if (red == 0.1f) red = .4f;
+        else red = 0.1f;
     }
 
     // TODO(student): Add a key press event that will let you cycle
     // through at least two meshes, rendered at the same position.
     // You will also need to generalize the mesh name used by `RenderMesh`.
-
+    if (key == GLFW_KEY_G) {
+        ++meshID;
+        if (meshID >= 3) meshID = 0;
+    }
+    if (key == GLFW_KEY_R) {
+        archer_pos.x = archer_pos.z = 0;
+        archer_pos.y = .5f;
+    }
 }
 
 

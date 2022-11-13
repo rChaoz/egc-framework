@@ -1,7 +1,6 @@
 #pragma once
 
 #include <string>
-
 #include "core/gpu/mesh.h"
 #include "utils/glm_utils.h"
 

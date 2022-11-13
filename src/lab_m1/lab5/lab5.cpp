@@ -27,6 +27,10 @@ Lab5::~Lab5()
 void Lab5::Init()
 {
     renderCameraTarget = false;
+    orthoProjection = false;
+    projectionFov = 60.0f;
+    projectionWidth = 16.0f;
+    projectionHeight = 9.0f;
 
     camera = new implemented::Camera();
     camera->Set(glm::vec3(0, 2, 3.5f), glm::vec3(0, 1, 0), glm::vec3(0, 1, 0));
@@ -42,16 +46,15 @@ void Lab5::Init()
         mesh->LoadMesh(PATH_JOIN(window->props.selfDir, RESOURCE_PATH::MODELS, "primitives"), "sphere.obj");
         meshes[mesh->GetMeshID()] = mesh;
     }
-
-    // TODO(student): After you implement the changing of the projection
-    // parameters, remove hardcodings of these parameters
-    projectionMatrix = glm::perspective(RADIANS(60), window->props.aspectRatio, 0.01f, 200.0f);
-
 }
 
 
 void Lab5::FrameStart()
 {
+
+    projectionMatrix = orthoProjection
+        ? glm::ortho(projectionWidth /2, projectionWidth /2, projectionHeight /2, projectionHeight /2, .01f, 200.0f)
+        : glm::perspective(RADIANS(projectionFov), window->props.aspectRatio, 0.01f, 200.0f);
     // Clears the color buffer (using the previously set color) and depth buffer
     glClearColor(0, 0, 0, 1);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -90,6 +93,17 @@ void Lab5::Update(float deltaTimeSeconds)
     // `RenderMesh()` that we've been using up until now. This new
     // function uses the view matrix from the camera that you just
     // implemented, and the local projection matrix.
+    {
+        glm::mat4 modelMatrix = glm::mat4(1);
+        modelMatrix = glm::scale(glm::translate(modelMatrix, glm::vec3(0, .5f, 2)), glm::vec3(2, .5f, 1));
+        RenderMesh(meshes["box"], shaders["VertexNormal"], modelMatrix);
+    }
+    
+    {
+        glm::mat4 modelMatrix = glm::mat4(1);
+        modelMatrix = glm::rotate(glm::scale(glm::translate(modelMatrix, glm::vec3(0, .5f, -2)), glm::vec3(1, 5, .1f)), 2.0f, glm::vec3(1, 2, 3));
+        RenderMesh(meshes["box"], shaders["VertexNormal"], modelMatrix);
+    }
 
     // Render the camera target. This is useful for understanding where
     // the rotation point is, when moving in third-person camera mode.
@@ -138,34 +152,52 @@ void Lab5::OnInputUpdate(float deltaTime, int mods)
         float cameraSpeed = 2.0f;
 
         if (window->KeyHold(GLFW_KEY_W)) {
-            // TODO(student): Translate the camera forward
-
+            camera->TranslateForward(deltaTime * cameraSpeed);
         }
 
         if (window->KeyHold(GLFW_KEY_A)) {
-            // TODO(student): Translate the camera to the left
+            camera->TranslateRight(-deltaTime * cameraSpeed);
 
         }
 
         if (window->KeyHold(GLFW_KEY_S)) {
-            // TODO(student): Translate the camera backward
+            camera->TranslateForward(-deltaTime * cameraSpeed);
 
         }
 
         if (window->KeyHold(GLFW_KEY_D)) {
-            // TODO(student): Translate the camera to the right
+            camera->TranslateRight(deltaTime * cameraSpeed);
 
         }
-
+        
         if (window->KeyHold(GLFW_KEY_Q)) {
-            // TODO(student): Translate the camera downward
-
+            camera->TranslateUpward(-deltaTime * cameraSpeed);
         }
 
         if (window->KeyHold(GLFW_KEY_E)) {
-            // TODO(student): Translate the camera upward
-
+            camera->TranslateUpward(deltaTime * cameraSpeed);
         }
+    }
+
+    if (window->KeyHold(GLFW_KEY_1)) {
+        projectionFov -= deltaTime * 10;
+    }
+    if (window->KeyHold(GLFW_KEY_2)) {
+        projectionFov += deltaTime * 10;
+    }
+    
+    if (window->KeyHold(GLFW_KEY_3)) {
+        projectionWidth += deltaTime;
+    }
+    if (window->KeyHold(GLFW_KEY_4)) {
+        projectionWidth -= deltaTime;
+    }
+    
+    if (window->KeyHold(GLFW_KEY_5)) {
+        projectionHeight += deltaTime;
+    }
+    if (window->KeyHold(GLFW_KEY_6)) {
+        projectionHeight -= deltaTime;
     }
 
     // TODO(student): Change projection parameters. Declare any extra
@@ -184,7 +216,8 @@ void Lab5::OnKeyPress(int key, int mods)
         renderCameraTarget = !renderCameraTarget;
     }
     // TODO(student): Switch projections
-
+    if (key == GLFW_KEY_O) orthoProjection = true;
+    else if (key == GLFW_KEY_P) orthoProjection = false;
 }
 
 
@@ -208,7 +241,8 @@ void Lab5::OnMouseMove(int mouseX, int mouseY, int deltaX, int deltaY)
             // TODO(student): Rotate the camera in first-person mode around
             // OX and OY using `deltaX` and `deltaY`. Use the sensitivity
             // variables for setting up the rotation speed.
-
+            camera->RotateFirstPerson_OX(-deltaY * sensivityOX);
+            camera->RotateFirstPerson_OY(-deltaX * sensivityOY);
         }
 
         if (window->GetSpecialKeyState() & GLFW_MOD_CONTROL) {
@@ -216,7 +250,8 @@ void Lab5::OnMouseMove(int mouseX, int mouseY, int deltaX, int deltaY)
             // TODO(student): Rotate the camera in third-person mode around
             // OX and OY using `deltaX` and `deltaY`. Use the sensitivity
             // variables for setting up the rotation speed.
-
+            camera->RotateThirdPerson_OX(-deltaY * sensivityOX);
+            camera->RotateThirdPerson_OY(-deltaX * sensivityOY);
         }
     }
 }

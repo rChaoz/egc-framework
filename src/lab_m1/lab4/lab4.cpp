@@ -97,6 +97,7 @@ void Lab4::Update(float deltaTimeSeconds)
     glViewport(miniViewportArea.x, miniViewportArea.y, miniViewportArea.width, miniViewportArea.height);
 
     // TODO(student): render the scene again, in the new viewport
+    RenderScene();//wow
     DrawCoordinateSystem();
 }
 
@@ -113,8 +114,30 @@ void Lab4::FrameEnd()
 
 void Lab4::OnInputUpdate(float deltaTime, int mods)
 {
-    // TODO(student): Add transformation logic
+    if (window->KeyHold(GLFW_KEY_W)) translateZ += deltaTime * 2;
+    else if (window->KeyHold(GLFW_KEY_S)) translateZ -= deltaTime * 2;
+    if (window->KeyHold(GLFW_KEY_A)) translateX += deltaTime * 2;
+    else if (window->KeyHold(GLFW_KEY_D)) translateX -= deltaTime * 2;
+    if (window->KeyHold(GLFW_KEY_R)) translateY += deltaTime * 2;
+    else if (window->KeyHold(GLFW_KEY_F)) translateY -= deltaTime * 2;
 
+    if (window->KeyHold(GLFW_KEY_1)) {
+        scaleX *= 1.01;
+        scaleY *= 1.01;
+        scaleZ *= 1.01;
+    }
+    else if (window->KeyHold(GLFW_KEY_2)) {
+        scaleX /= 1.01;
+        scaleY /= 1.01;
+        scaleZ /= 1.01;
+    }
+
+    if (window->KeyHold(GLFW_KEY_3)) angularStepOX += deltaTime;
+    else if (window->KeyHold(GLFW_KEY_4)) angularStepOX -= deltaTime;
+    if (window->KeyHold(GLFW_KEY_5)) angularStepOY += deltaTime;
+    else if (window->KeyHold(GLFW_KEY_6)) angularStepOY -= deltaTime;
+    if (window->KeyHold(GLFW_KEY_7)) angularStepOZ += deltaTime;
+    else if (window->KeyHold(GLFW_KEY_8)) angularStepOZ -= deltaTime;
 }
 
 
@@ -137,7 +160,18 @@ void Lab4::OnKeyPress(int key, int mods)
         }
     }
     
-    // TODO(student): Add viewport movement and scaling logic
+    if (key == GLFW_KEY_I) miniViewportArea.y += 10;
+    else if (key == GLFW_KEY_K) miniViewportArea.y -= 10;
+    if (key == GLFW_KEY_J) miniViewportArea.x -= 10;
+    else if (key == GLFW_KEY_L) miniViewportArea.x += 10;
+
+    if (key == GLFW_KEY_U) {
+        miniViewportArea.width /= 1.1f;
+        miniViewportArea.height /= 1.1f;
+    } else if (key == GLFW_KEY_O) {
+        miniViewportArea.width *= 1.1f;
+        miniViewportArea.height *= 1.1f;
+    }
 }
 
 

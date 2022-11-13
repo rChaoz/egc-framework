@@ -30,11 +30,12 @@ namespace m1
      protected:
         float cx, cy;
         glm::mat3 modelMatrix;
-        float translateX, translateY;
-        float scaleX, scaleY;
-        float angularStep;
+        float translateX = 300, translateY = 200;
+        float scaleX = 0, scaleY = 0, scale = 1;
+        float scaleDirection = .01f;
+        float angularStep = 0;
 
         // TODO(student): If you need any other class variables, define them here.
-
+        float translateYDirection = 250;
     };
 }   // namespace m1

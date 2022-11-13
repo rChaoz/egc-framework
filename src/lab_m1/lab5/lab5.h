@@ -36,6 +36,8 @@ namespace m1
         bool renderCameraTarget;
 
         // TODO(student): If you need any other class variables, define them here.
+        bool orthoProjection;
+        float projectionFov, projectionWidth, projectionHeight;
 
     };
 }   // namespace m1
