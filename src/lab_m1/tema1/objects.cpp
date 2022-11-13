@@ -80,6 +80,45 @@ tema1::Rect::Rect(float top, float right, float bottom, float left) {
     points = { glm::vec3(-left, top, 0), glm::vec3(right, top, 0), glm::vec3(right, -bottom, 0), glm::vec3(-left, -bottom, 0) };
 }
 
+void tema1::Rect::Update(float angle, float scaleX, float scaleY) {
+    auto matrix = transform2D::Rotate(angle) * transform2D::Scale(scaleX, scaleY);
+    points = {
+        matrix * glm::vec3(-left, top, 0),
+        matrix * glm::vec3(-left, -bottom, 0),
+        matrix * glm::vec3(right, -bottom, 0),
+        matrix * glm::vec3(right, top, 0)
+    };
+}
+
+int ccw(glm::vec2& A, glm::vec2& B, glm::vec2& C) {
+    return (C.y - A.y) * (B.x - A.x) > (B.y - A.y) * (C.x - A.x);
+}
+
+bool intersect(glm::vec2& A, glm::vec2& B, glm::vec2& C, glm::vec2& D) {
+    return ccw(A, C, D) != ccw(B, C, D) && ccw(A, B, C) != ccw(A, B, D);
+}
+
+bool tema1::Rect::ContainsPoint(glm::vec2 point) {
+    // RayCast method
+    float max = left;
+    if (top > max) max = top;
+    if (right > max) max = right;
+    if (bottom > max) max = bottom;
+    glm::vec2 start(-2 * max, 10);
+
+    std::cout << "start(" << start.x << ", " << start.y << ")  ";
+    std::cout << "point(" << point.x << ", " << point.y << ")  " << std::endl;
+    int count = 0;
+    for (int i = 0; i < 4; ++i) {
+        glm::vec2 a = points[i], b = points[i == 3 ? 0 : i + 1];
+        std::cout << "a(" << a.x << ", " << a.y << ")  ";
+        std::cout << "b(" << a.x << ", " << a.y << ")  " << std::endl;
+        if (intersect(a, b, start, point)) ++count;
+    }
+
+    return count % 2 == 1;
+}
+
 // COMPLEX MESH
 tema1::ComplexMesh::ComplexMesh(glm::mat3 modelMatrix, bool visible) : modelMatrix(modelMatrix), visible(visible) {}
 
@@ -91,8 +130,9 @@ tema1::Complex::Complex(std::unordered_map<std::string, Mesh*>& worldMeshMap) : 
     scaleX = scaleY = 1.0f;
 }
 
-bool tema1::Complex::PointInBox(float x, float y) {
-    return true;
+bool tema1::Complex::PointInBox(glm::vec2 point) {
+    box.Update(angle, scaleX, scaleY);
+    return box.ContainsPoint(point - position);
 }
 
 void tema1::Complex::AddMesh(Mesh* mesh, glm::mat3 modelMatrix, bool visible) {

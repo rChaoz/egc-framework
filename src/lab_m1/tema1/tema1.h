@@ -31,7 +31,7 @@ namespace m1
         void OnWindowResize(int width, int height) override;
 
         void ResetGame();
-        glm::vec3 MouseToScreen(int mouseX, int mouseY);
+        glm::vec2 MouseToScreen(int mouseX, int mouseY);
         void RenderComplex(std::string name, float deltaTime, glm::mat3 finalTransform = glm::mat3(1), bool customColor = false, glm::vec3 color = glm::vec3(0));
         void SetStatus(int status);
      protected:

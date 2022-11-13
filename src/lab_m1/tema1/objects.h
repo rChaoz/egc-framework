@@ -22,6 +22,8 @@ namespace tema1 {
 
         Rect();
         Rect(float top, float right, float bottom, float left);
+        virtual void Update(float angle, float scaleX, float scaleY);
+        virtual bool ContainsPoint(glm::vec2 point);
     };
 
     struct ComplexMesh {
@@ -39,11 +41,11 @@ namespace tema1 {
         Complex(std::unordered_map<std::string, Mesh*>& worldMeshMap);
 
         bool visible;
-        glm::vec3 position;
+        glm::vec2 position;
         Rect box;
         float angle, scaleX, scaleY;
 
-        virtual bool PointInBox(float x, float y);
+        virtual bool PointInBox(glm::vec2 point);
         virtual void AddMesh(std::string id, glm::mat3 modelMatrix = glm::mat3(1), bool visible = true);
         virtual void AddMesh(Mesh* mesh, glm::mat3 modelMatrix = glm::mat3(1), bool visible = true);
         virtual void Update(float deltaTime, int screenW, int screenH);

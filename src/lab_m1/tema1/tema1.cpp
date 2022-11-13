@@ -229,9 +229,9 @@ void Tema1::OnKeyRelease(int key, int mods) {
 }
 
 
-glm::vec3 Tema1::MouseToScreen(int mouseX, int mouseY) {
+glm::vec2 Tema1::MouseToScreen(int mouseX, int mouseY) {
     glm::ivec2 resolution = window->GetResolution();
-    return glm::vec3(mouseX * SCREEN_W / resolution.x, SCREEN_H - mouseY * SCREEN_H / resolution.y, 0);
+    return glm::vec2(mouseX * SCREEN_W / resolution.x, SCREEN_H - mouseY * SCREEN_H / resolution.y);
 }
 
 void Tema1::OnMouseMove(int mouseX, int mouseY, int deltaX, int deltaY) {
@@ -247,7 +247,9 @@ void Tema1::OnMouseBtnPress(int mouseX, int mouseY, int button, int mods) {
     }
     else if (status != 0 || button != GLFW_MOUSE_BUTTON_2) return;
     
-    SetStatus(1);
+    // Check collision
+    auto duck = static_cast<tema1::Duck*>(complexObjects["duck"]);
+    if (duck->PointInBox(MouseToScreen(mouseX, mouseY))) SetStatus(1);
 }
 
 
