@@ -127,40 +127,18 @@ void Tema1::Init() {
         AddMeshToList(tema1::CreateRect("timer_outline", glm::vec3(SCREEN_W / 2, 0, 0), SCREEN_W / 3 + 4, 14, glm::vec3(.1f), true, 10.0f));
         // TODO score
     }
-    // Game Over UI
+    // Game Starting / Over UI
     {
         glm::vec3 xColor(0.6f, 0.09f, 0.09f);
         tema1::Complex* gameOver = new tema1::Complex(meshes);
         gameOver->AddMesh(tema1::CreateRect("gameOver_1", glm::vec3(0), 250, 20, xColor, true, 20), transform2D::Rotate(AI_DEG_TO_RAD(45)));
         gameOver->AddMesh(tema1::CreateRect("gameOver_2", glm::vec3(0), 250, 20, xColor, true, 20), transform2D::Rotate(AI_DEG_TO_RAD(-45)));
         complexObjects["gameOver"] = gameOver;
+
+        complexObjects["startCountdown"] = new tema1::StartCountdown(meshes);
     }
     // Create duck
-    {
-
-        auto duck = new tema1::Duck(meshes);
-        duck->box = tema1::Rect(65, 110, 65, 80);
-
-
-        duck->AddMesh(tema1::CreateTriangle("duck_body", glm::vec3(0, 0, 0),
-            glm::vec3(-80, 25, 0), glm::vec3(-80, -25, 0), glm::vec3(80, 0, 0),
-            glm::vec3(0.8f, 0.81f, 0.82f)));
-        duck->AddMesh(tema1::CreateTriangle("duck_left_wing", glm::vec3(-5, 5, 0),
-            glm::vec3(-18, 0, 0), glm::vec3(18, 0, 0), glm::vec3(-7, 65, 0),
-            glm::vec3(0.8f, 0.81f, 0.82f)));
-        duck->AddMesh(tema1::CreateTriangle("duck_right_wing", glm::vec3(-5, -5, 0),
-            glm::vec3(-18, 0, 0), glm::vec3(18, 0, 0), glm::vec3(-7, -65, 0),
-            glm::vec3(0.8f, 0.81f, 0.82f)));
-
-
-        duck->AddMesh(tema1::CreateCircle("duck_head", glm::vec3(70, 0, 0), 20, glm::vec3(0.95f, 0.96f, 0.96f), true, .5f));
-        duck->AddMesh(tema1::CreateCircle("duck_eye", glm::vec3(80, 0, 0), 3, glm::vec3(.0f, .0f, .0f), true, .7f));
-        duck->AddMesh(tema1::CreateTriangle("duck_beak", glm::vec3(100, 0, 0),
-            glm::vec3(-10, 4, 0), glm::vec3(-10, -4, 0), glm::vec3(10, 0, 0),
-            glm::vec3(0.87f, 0.49f, 0.1f)));
-
-        complexObjects["duck"] = duck;
-    }
+    complexObjects["duck"] = new tema1::Duck(meshes);
 
     ResetGame();
 }
@@ -221,11 +199,12 @@ void Tema1::Update(float deltaTimeSeconds) {
         RenderMesh2D(meshes["timer"], shaders["VertexColor"], transform2D::Translate(0, SCREEN_H - 7));
         RenderMesh2D(meshes["timer_cover"], shaders["VertexColor"], transform2D::Translate(SCREEN_W * 2 / 3, SCREEN_H - 7) * transform2D::Scale(1 - playerTimer / maxTimer, 1));
 
-        // Game Over UI
+        // Game Startin /  Over UI
         if (status == -2) {
             complexObjects["gameOver"]->position = glm::vec3(SCREEN_W / 2, SCREEN_H / 2 + SCREEN_H / 8, 0);
             RenderComplex("gameOver", deltaTimeSeconds);
         }
+        else if (status == -1) RenderComplex("startCountdown", deltaTimeSeconds);
     }
 
 
@@ -262,7 +241,10 @@ void Tema1::OnMouseMove(int mouseX, int mouseY, int deltaX, int deltaY) {
 
 
 void Tema1::OnMouseBtnPress(int mouseX, int mouseY, int button, int mods) {
-    if (status == -2) ResetGame();
+    if (status == -2) {
+        ResetGame();
+        return;
+    }
     else if (status != 0 || button != GLFW_MOUSE_BUTTON_2) return;
     
     SetStatus(1);
@@ -284,13 +266,14 @@ void Tema1::OnWindowResize(int width, int height) {
 
 void Tema1::ResetGame() {
     static_cast<tema1::Duck*>(complexObjects["duck"])->position.y = 0; // ascundem rata
+    static_cast<tema1::StartCountdown*>(complexObjects["startCountdown"])->Start(3);
 
-    status = 2;
+    status = -1;
     score = 0;
     hp = bullets = 3;
 
     shotTimer = 100;
-    spawnTimer = 1.5f;
+    spawnTimer = 3;
 }
 
 void Tema1::SetStatus(int status) {

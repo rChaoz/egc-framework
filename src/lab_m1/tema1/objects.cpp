@@ -107,11 +107,56 @@ void tema1::Complex::AddMesh(std::string id, glm::mat3 modelMatrix, bool visible
 
 void tema1::Complex::Update(float deltaTime, int screenW, int screenH) {}
 
+// START COUNTDOWN
+tema1::StartCountdown::StartCountdown(std::unordered_map<std::string, Mesh*>& worldMeshMap) : Complex(worldMeshMap) {
+    timerTotal = 1;
+    timer = 0;
+
+    const glm::vec3 color(0.95f, 0.79f, 0.05f);
+    AddMesh(CreateRect("startCountdown_1", glm::vec3(-80, 0, 0), 40, 150, color, true, 15));
+    AddMesh(CreateRect("startCountdown_2", glm::vec3(0, 0, 0), 40, 150, color, true, 15));
+    AddMesh(CreateRect("startCountdown_3", glm::vec3(80, 0, 0), 40, 150, color, true, 15));
+}
+
+void tema1::StartCountdown::Start(float timer) {
+    timerTotal = timer;
+    this->timer = 0;
+}
+
+void tema1::StartCountdown::Update(float deltaTime, int screenW, int screenH) {
+    if (timer > timerTotal) return;
+    timer += deltaTime;
+    position.x = screenW / 2;
+    position.y = screenH / 2;
+
+    float div = timerTotal / 3;
+    meshes["startCountdown_2"].visible = timer < 2 * div;
+    meshes["startCountdown_3"].visible = timer < div;
+}
+
 // DUCK
 tema1::Duck::Duck(std::unordered_map<std::string, Mesh*>& worldMeshMap) : Complex(worldMeshMap) {
     speed = baseSpeed;
     flapAngle = animationTimer = startingHeight = 0.0f;
     status = 0;
+
+    box = tema1::Rect(65, 110, 65, 80);
+
+    AddMesh(CreateTriangle("duck_body", glm::vec3(0, 0, 0),
+        glm::vec3(-80, 25, 0), glm::vec3(-80, -25, 0), glm::vec3(80, 0, 0),
+        glm::vec3(0.8f, 0.81f, 0.82f)));
+    AddMesh(CreateTriangle("duck_left_wing", glm::vec3(-5, 5, 0),
+        glm::vec3(-18, 0, 0), glm::vec3(18, 0, 0), glm::vec3(-7, 65, 0),
+        glm::vec3(0.8f, 0.81f, 0.82f)));
+    AddMesh(CreateTriangle("duck_right_wing", glm::vec3(-5, -5, 0),
+        glm::vec3(-18, 0, 0), glm::vec3(18, 0, 0), glm::vec3(-7, -65, 0),
+        glm::vec3(0.8f, 0.81f, 0.82f)));
+
+    AddMesh(CreateCircle("duck_head", glm::vec3(70, 0, 0), 20, glm::vec3(0.95f, 0.96f, 0.96f), true, .5f));
+    AddMesh(CreateCircle("duck_eye", glm::vec3(80, 0, 0), 3, glm::vec3(.0f, .0f, .0f), true, .7f));
+    AddMesh(CreateTriangle("duck_beak", glm::vec3(100, 0, 0),
+        glm::vec3(-10, 4, 0), glm::vec3(-10, -4, 0), glm::vec3(10, 0, 0),
+        glm::vec3(0.87f, 0.49f, 0.1f)));
 }
 
 bool tema1::Duck::HeadingRight() {

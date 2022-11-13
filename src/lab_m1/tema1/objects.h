@@ -49,6 +49,17 @@ namespace tema1 {
         virtual void Update(float deltaTime, int screenW, int screenH);
     };
 
+    class StartCountdown : public Complex {
+    private:
+        float timerTotal, timer;
+
+    public:
+        StartCountdown(std::unordered_map<std::string, Mesh*>& worldMeshMap);
+
+        virtual void Start(float timer);
+        void Update(float deltaTime, int screenW, int screenH) override;
+    };
+
     class Duck : public Complex {
     private:
         // Configurare rata
