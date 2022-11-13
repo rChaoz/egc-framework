@@ -37,5 +37,12 @@ namespace m1
      protected:
          int SCREEN_W, SCREEN_H, status, score, hp, bullets;
          float shotTimer, spawnTimer, playerTimer, maxTimer;
+         /* Statuses:
+         * -2 - game over
+         * -1 - game starting
+         *  0 - game playing
+         *  1 - duck dying
+         *  2 - duck escaping
+         */
     };
 }   // namespace m1

@@ -120,7 +120,7 @@ void Tema1::Init() {
         heart->InitFromData(vertices, indices);
         AddMeshToList(heart);
     }
-    // Player timer
+    // Player timer & score
     {
         glm::vec3 red(1, .1f, .1f), green(.1f, 1, .1f);
         std::vector<VertexFormat> vertices = {
@@ -134,12 +134,21 @@ void Tema1::Init() {
         Mesh* timer = new Mesh("timer");
         timer->InitFromData(vertices, indices);
         AddMeshToList(timer);
-
-        
         AddMeshToList(tema1::CreateRect("timer_cover", glm::vec3(-SCREEN_W / 6, 0, 0), SCREEN_W / 3, 10, glm::vec3(.1f), true, 10.5f));
         AddMeshToList(tema1::CreateRect("timer_outline", glm::vec3(SCREEN_W / 2, 0, 0), SCREEN_W / 3 + 4, 14, glm::vec3(.1f), true, 10.0f));
+        // TODO score
     }
+    // Game Over UI
+    {
+        glm::vec3 xColor(0.6f, 0.09f, 0.09f);
+        AddMeshToList(tema1::CreateRect("gameOver_1", glm::vec3(0), 250, 20, xColor, true, 20));
+        AddMeshToList(tema1::CreateRect("gameOver_2", glm::vec3(0), 250, 20, xColor, true, 20));
 
+        tema1::Complex* gameOver = new tema1::Complex();
+        gameOver->AddMesh("gameOver_1", transform2D::Rotate(AI_DEG_TO_RAD(45)));
+        gameOver->AddMesh("gameOver_2", transform2D::Rotate(AI_DEG_TO_RAD(-45)));
+        complexObjects["gameOver"] = gameOver;
+    }
     // Create duck
     {
         AddMeshToList(tema1::CreateTriangle("duck_body", glm::vec3(0, 0, 0),
@@ -194,7 +203,10 @@ void Tema1::Update(float deltaTimeSeconds) {
     spawnTimer -= deltaTimeSeconds;
     const bool redDuck = shotTimer < 1;
 
-    if (status != 0 && spawnTimer < 0) SetStatus(0);
+    if (status != 0 && spawnTimer < 0) {
+        if (hp > 0) SetStatus(0);
+        else SetStatus(-2);
+    }
     if (status == 0) {
         playerTimer -= deltaTimeSeconds;
         if (playerTimer < 0) SetStatus(2);
@@ -217,20 +229,21 @@ void Tema1::Update(float deltaTimeSeconds) {
     // Draw UI
     {
         // Bullets
-        glm::vec3 bulletPos(SCREEN_W - 25, SCREEN_H - 55, 0);
-        complexObjects["bullet"]->position = bulletPos;
-        RenderComplex("bullet", deltaTimeSeconds);
-        RenderComplex("bullet", deltaTimeSeconds, glm::vec3(-50, 0, 0));
-        RenderComplex("bullet", deltaTimeSeconds, glm::vec3(-100, 0, 0));
+        complexObjects["bullet"]->position = glm::vec3(SCREEN_W - 25, SCREEN_H - 55, 0);
+        for (int i = 0; i < bullets; ++i) RenderComplex("bullet", deltaTimeSeconds, glm::vec3(-50 * i, 0, 0));
         // Hearts
         glm::vec3 heartPos(SCREEN_W - 25, SCREEN_H - 90, 0);
-        if (hp >= 3) RenderMesh2D(meshes["heart"], shaders["VertexColor"], transform2D::Translate(heartPos.x, heartPos.y));
-        if (hp >= 2) RenderMesh2D(meshes["heart"], shaders["VertexColor"], transform2D::Translate(heartPos.x - 50, heartPos.y));
-        if (hp >= 1) RenderMesh2D(meshes["heart"], shaders["VertexColor"], transform2D::Translate(heartPos.x - 100, heartPos.y));
+        for (int i = 0; i < hp; ++i) RenderMesh2D(meshes["heart"], shaders["VertexColor"], transform2D::Translate(heartPos.x - 50 * i, heartPos.y));
         // Player timer
         RenderMesh2D(meshes["timer_outline"], shaders["VertexColor"], transform2D::Translate(0, SCREEN_H - 7));
         RenderMesh2D(meshes["timer"], shaders["VertexColor"], transform2D::Translate(0, SCREEN_H - 7));
         RenderMesh2D(meshes["timer_cover"], shaders["VertexColor"], transform2D::Translate(SCREEN_W * 2 / 3, SCREEN_H - 7) * transform2D::Scale(1 - playerTimer / maxTimer, 1));
+
+        // Game Over UI
+        if (status == -2) {
+            complexObjects["gameOver"]->position = glm::vec3(SCREEN_W / 2, SCREEN_H / 2 + SCREEN_H / 8, 0);
+            RenderComplex("gameOver", deltaTimeSeconds);
+        }
     }
 
 
@@ -267,8 +280,9 @@ void Tema1::OnMouseMove(int mouseX, int mouseY, int deltaX, int deltaY) {
 
 
 void Tema1::OnMouseBtnPress(int mouseX, int mouseY, int button, int mods) {
-    if (status != 0) return;
-    if (button != GLFW_MOUSE_BUTTON_2) return;
+    if (status == -2) ResetGame();
+    else if (status != 0 || button != GLFW_MOUSE_BUTTON_2) return;
+    
     SetStatus(1);
 }
 
@@ -286,7 +300,6 @@ void Tema1::OnWindowResize(int width, int height) {
 }
 
 
-
 void Tema1::ResetGame() {
     auto* duck = static_cast<tema1::Duck*>(complexObjects["duck"]);
     if (duck) duck->position.y = 0; // ascundem rata
@@ -296,7 +309,7 @@ void Tema1::ResetGame() {
     hp = bullets = 3;
 
     shotTimer = 100;
-    spawnTimer = .5f;
+    spawnTimer = 1.5f;
 }
 
 void Tema1::SetStatus(int status) {
