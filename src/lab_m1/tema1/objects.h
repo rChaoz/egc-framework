@@ -24,19 +24,28 @@ namespace tema1 {
         Rect(float top, float right, float bottom, float left);
     };
 
+    struct ComplexMesh {
+        glm::mat3 modelMatrix;
+        bool visible;
+        ComplexMesh(glm::mat3 modelMatrix = glm::mat3(1), bool visible = true);
+    };
+
     class Complex {
+    private:
+        std::unordered_map<std::string, Mesh*>& const worldMeshMap;
     public:
-        std::vector<std::string> meshes;
-        std::unordered_map<std::string, glm::mat3> meshMatrixes;
+        std::unordered_map<std::string, ComplexMesh> meshes;
 
-        Complex();
+        Complex(std::unordered_map<std::string, Mesh*>& worldMeshMap);
 
+        bool visible;
         glm::vec3 position;
         Rect box;
         float angle, scaleX, scaleY;
 
         virtual bool PointInBox(float x, float y);
-        virtual void AddMesh(std::string mesh, glm::mat3 modelMatrix = glm::mat3(1));
+        virtual void AddMesh(std::string id, glm::mat3 modelMatrix = glm::mat3(1), bool visible = true);
+        virtual void AddMesh(Mesh* mesh, glm::mat3 modelMatrix = glm::mat3(1), bool visible = true);
         virtual void Update(float deltaTime, int screenW, int screenH);
     };
 
@@ -52,7 +61,8 @@ namespace tema1 {
         static constexpr float baseSpeed = 150.0f;
         float speed;
 
-        Duck();
+        Duck(std::unordered_map<std::string, Mesh*>& worldMeshMap);
+
         virtual bool HeadingRight();
         virtual void SetStatus(int newStatus, int screenW, int screenH);
         void Update(float deltaTime, int screenW, int screenH) override;

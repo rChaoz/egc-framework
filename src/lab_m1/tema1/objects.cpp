@@ -66,7 +66,26 @@ Mesh* tema1::CreateTriangle(const std::string& name, glm::vec3 center, glm::vec3
     return triangle;
 }
 
-tema1::Complex::Complex() {
+// RECT
+tema1::Rect::Rect() {
+    this->top = this->right = this->bottom = this->left = 0;
+    points = { glm::vec3(0,0,0), glm::vec3(0,0,0), glm::vec3(0,0,0), glm::vec3(0,0,0) };
+}
+
+tema1::Rect::Rect(float top, float right, float bottom, float left) {
+    this->top = top;
+    this->right = right;
+    this->bottom = bottom;
+    this->left = left;
+    points = { glm::vec3(-left, top, 0), glm::vec3(right, top, 0), glm::vec3(right, -bottom, 0), glm::vec3(-left, -bottom, 0) };
+}
+
+// COMPLEX MESH
+tema1::ComplexMesh::ComplexMesh(glm::mat3 modelMatrix, bool visible) : modelMatrix(modelMatrix), visible(visible) {}
+
+// COMPLEX
+tema1::Complex::Complex(std::unordered_map<std::string, Mesh*>& worldMeshMap) : worldMeshMap(worldMeshMap) {
+    visible = true;
     position = glm::vec3(0, 0, 0);
     angle = 0.0f;
     scaleX = scaleY = 1.0f;
@@ -76,14 +95,20 @@ bool tema1::Complex::PointInBox(float x, float y) {
     return true;
 }
 
-void tema1::Complex::AddMesh(std::string mesh, glm::mat3 modelMatrix) {
-    meshes.push_back(mesh);
-    meshMatrixes[mesh] = modelMatrix;
+void tema1::Complex::AddMesh(Mesh* mesh, glm::mat3 modelMatrix, bool visible) {
+    auto id = mesh->GetMeshID();
+    worldMeshMap[id] = mesh;
+    AddMesh(id, modelMatrix);
+}
+
+void tema1::Complex::AddMesh(std::string id, glm::mat3 modelMatrix, bool visible) {
+    meshes[id] = ComplexMesh(modelMatrix, visible);
 }
 
 void tema1::Complex::Update(float deltaTime, int screenW, int screenH) {}
 
-tema1::Duck::Duck() {
+// DUCK
+tema1::Duck::Duck(std::unordered_map<std::string, Mesh*>& worldMeshMap) : Complex(worldMeshMap) {
     speed = baseSpeed;
     flapAngle = animationTimer = startingHeight = 0.0f;
     status = 0;
@@ -115,6 +140,9 @@ void tema1::Duck::SetStatus(int newStatus, int screenW, int screenH) {
         animationTimer = 0;
         startingHeight = position.y;
     }
+    else {
+        position.y = 0;
+    }
 }
 
 void tema1::Duck::Update(float deltaTime, int screenW, int screenH) {
@@ -123,8 +151,8 @@ void tema1::Duck::Update(float deltaTime, int screenW, int screenH) {
     if (flapAngle > 2 * M_PI) flapAngle -= 2 * M_PI;
     float amount = sinf(this->flapAngle) * flapWideness;
 
-    meshMatrixes["duck_right_wing"] = transform2D::Rotate(amount);
-    meshMatrixes["duck_left_wing"] = transform2D::Rotate(-amount);
+    meshes["duck_right_wing"].modelMatrix = transform2D::Rotate(amount);
+    meshes["duck_left_wing"].modelMatrix = transform2D::Rotate(-amount);
 
     if (status == 1) {
         animationTimer += deltaTime;
@@ -147,6 +175,7 @@ void tema1::Duck::Update(float deltaTime, int screenW, int screenH) {
         position.y = startingHeight + value * screenH;
         return;
     }
+    else if (status != 0) return;
     // Verificam daca rata iese din ecran
     float d = speed * deltaTime;
     position.x += cos(angle) * d;
@@ -171,19 +200,6 @@ void tema1::Duck::Update(float deltaTime, int screenW, int screenH) {
     if (angle < 0) angle += 2 * M_PI;
 
     // Atunci cand rata se roteste 180, ochiul care era "sus" (deasupra ciocului) va ajunge "jos"
-    if (HeadingRight()) meshMatrixes["duck_eye"] = transform2D::Translate(0, 5);
-    else meshMatrixes["duck_eye"] = transform2D::Translate(0, -5);
-}
-
-tema1::Rect::Rect() {
-    this->top = this->right = this->bottom = this->left = 0;
-    points = { glm::vec3(0,0,0), glm::vec3(0,0,0), glm::vec3(0,0,0), glm::vec3(0,0,0) };
-}
-
-tema1::Rect::Rect(float top, float right, float bottom, float left) {
-    this->top = top;
-    this->right = right;
-    this->bottom = bottom;
-    this->left = left;
-    points = { glm::vec3(-left, top, 0), glm::vec3(right, top, 0), glm::vec3(right, -bottom, 0), glm::vec3(-left, -bottom, 0) };
+    if (HeadingRight()) meshes["duck_eye"].modelMatrix = transform2D::Translate(0, 5);
+    else meshes["duck_eye"].modelMatrix = transform2D::Translate(0, -5);
 }

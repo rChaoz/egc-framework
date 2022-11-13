@@ -27,8 +27,6 @@ void Tema1::Init() {
     camera->Update();
     GetCameraInput()->SetActive(false);
 
-    ResetGame();
-
     // Initialize ground & moon
     {
         // Ground
@@ -54,37 +52,28 @@ void Tema1::Init() {
         AddMeshToList(grass);
 
         // Moon
-        auto* moon = new tema1::Complex();
-        AddMeshToList(tema1::CreateCircle("moon", glm::vec3(0), 50, glm::vec3(0.78f, 0.75f, 0.67f), true, -1.0f));
-        AddMeshToList(tema1::CreateCircle("moon_crater1", glm::vec3(18, 15, 0), 12, glm::vec3(0.58f, 0.56f, 0.5f), true, -.8f));
-        AddMeshToList(tema1::CreateCircle("moon_crater2", glm::vec3(-25, -19, 0), 4, glm::vec3(0.58f, 0.56f, 0.5f), true, -.8f));
-        moon->AddMesh("moon");
-        moon->AddMesh("moon_crater1");
-        moon->AddMesh("moon_crater2");
+        auto* moon = new tema1::Complex(meshes);
+        moon->AddMesh(tema1::CreateCircle("moon", glm::vec3(0), 50, glm::vec3(0.78f, 0.75f, 0.67f), true, -1.0f));
+        moon->AddMesh(tema1::CreateCircle("moon_crater1", glm::vec3(18, 15, 0), 12, glm::vec3(0.58f, 0.56f, 0.5f), true, -.8f));
+        moon->AddMesh(tema1::CreateCircle("moon_crater2", glm::vec3(-25, -19, 0), 4, glm::vec3(0.58f, 0.56f, 0.5f), true, -.8f));
         complexObjects["moon"] = moon;
     }
     // Cursor
     {
-        auto *cursor = new tema1::Complex();
+        auto *cursor = new tema1::Complex(meshes);
         glm::vec3 color(1, 0.28f, 0.28f);
-        AddMeshToList(tema1::CreateRect("cursor_1", glm::vec3(0), 20, 3, color, true, 15.5f));
-        AddMeshToList(tema1::CreateRect("cursor_1_shadow", glm::vec3(0), 20, 3, glm::vec3(0), true, 15.0f));
-        AddMeshToList(tema1::CreateRect("cursor_2", glm::vec3(0), 20, 3, color, true, 15.5f));
-        AddMeshToList(tema1::CreateRect("cursor_2_shadow", glm::vec3(0), 20, 3, glm::vec3(0), true, 15.0f));
-        cursor->AddMesh("cursor_1", transform2D::Rotate(M_PI_4));
-        cursor->AddMesh("cursor_1_shadow", transform2D::Translate(2, -2) * transform2D::Rotate(M_PI_4));
-        cursor->AddMesh("cursor_2", transform2D::Rotate(-M_PI_4));
-        cursor->AddMesh("cursor_2_shadow", transform2D::Translate(2, -2) * transform2D::Rotate(-M_PI_4));
+        cursor->AddMesh(tema1::CreateRect("cursor_1", glm::vec3(0), 20, 3, color, true, 15.5f), transform2D::Rotate(M_PI_4));
+        cursor->AddMesh(tema1::CreateRect("cursor_1_shadow", glm::vec3(0), 20, 3, glm::vec3(0), true, 15.0f), transform2D::Translate(2, -2) * transform2D::Rotate(M_PI_4));
+        cursor->AddMesh(tema1::CreateRect("cursor_2", glm::vec3(0), 20, 3, color, true, 15.5f), transform2D::Rotate(-M_PI_4));
+        cursor->AddMesh(tema1::CreateRect("cursor_2_shadow", glm::vec3(0), 20, 3, glm::vec3(0), true, 15.0f), transform2D::Translate(2, -2) * transform2D::Rotate(-M_PI_4));
         complexObjects["cursor"] = cursor;
     }
     // Bullet & heart objects
     {
         // Bullet
-        auto* bullet = new tema1::Complex();
-        AddMeshToList(tema1::CreateCircle("bullet_top", glm::vec3(0, 30, 0), 8, glm::vec3(0.53f, 0.3f, 0.1f), true, 5.0f));
-        AddMeshToList(tema1::CreateRect("bullet_bot", glm::vec3(0, 15, 0), 16, 30, glm::vec3(0.82f, 0.53f, 0.19f), true, 5.5f));
-        bullet->AddMesh("bullet_top");
-        bullet->AddMesh("bullet_bot");
+        auto* bullet = new tema1::Complex(meshes);
+        bullet->AddMesh(tema1::CreateCircle("bullet_top", glm::vec3(0, 30, 0), 8, glm::vec3(0.53f, 0.3f, 0.1f), true, 5.0f));
+        bullet->AddMesh(tema1::CreateRect("bullet_bot", glm::vec3(0, 15, 0), 16, 30, glm::vec3(0.82f, 0.53f, 0.19f), true, 5.5f));
         complexObjects["bullet"] = bullet;
 
         // Heart
@@ -141,46 +130,39 @@ void Tema1::Init() {
     // Game Over UI
     {
         glm::vec3 xColor(0.6f, 0.09f, 0.09f);
-        AddMeshToList(tema1::CreateRect("gameOver_1", glm::vec3(0), 250, 20, xColor, true, 20));
-        AddMeshToList(tema1::CreateRect("gameOver_2", glm::vec3(0), 250, 20, xColor, true, 20));
-
-        tema1::Complex* gameOver = new tema1::Complex();
-        gameOver->AddMesh("gameOver_1", transform2D::Rotate(AI_DEG_TO_RAD(45)));
-        gameOver->AddMesh("gameOver_2", transform2D::Rotate(AI_DEG_TO_RAD(-45)));
+        tema1::Complex* gameOver = new tema1::Complex(meshes);
+        gameOver->AddMesh(tema1::CreateRect("gameOver_1", glm::vec3(0), 250, 20, xColor, true, 20), transform2D::Rotate(AI_DEG_TO_RAD(45)));
+        gameOver->AddMesh(tema1::CreateRect("gameOver_2", glm::vec3(0), 250, 20, xColor, true, 20), transform2D::Rotate(AI_DEG_TO_RAD(-45)));
         complexObjects["gameOver"] = gameOver;
     }
     // Create duck
     {
-        AddMeshToList(tema1::CreateTriangle("duck_body", glm::vec3(0, 0, 0),
+
+        auto duck = new tema1::Duck(meshes);
+        duck->box = tema1::Rect(65, 110, 65, 80);
+
+
+        duck->AddMesh(tema1::CreateTriangle("duck_body", glm::vec3(0, 0, 0),
             glm::vec3(-80, 25, 0), glm::vec3(-80, -25, 0), glm::vec3(80, 0, 0),
             glm::vec3(0.8f, 0.81f, 0.82f)));
-        AddMeshToList(tema1::CreateTriangle("duck_left_wing", glm::vec3(-5, 5, 0),
+        duck->AddMesh(tema1::CreateTriangle("duck_left_wing", glm::vec3(-5, 5, 0),
             glm::vec3(-18, 0, 0), glm::vec3(18, 0, 0), glm::vec3(-7, 65, 0),
             glm::vec3(0.8f, 0.81f, 0.82f)));
-        AddMeshToList(tema1::CreateTriangle("duck_right_wing", glm::vec3(-5, -5, 0),
+        duck->AddMesh(tema1::CreateTriangle("duck_right_wing", glm::vec3(-5, -5, 0),
             glm::vec3(-18, 0, 0), glm::vec3(18, 0, 0), glm::vec3(-7, -65, 0),
             glm::vec3(0.8f, 0.81f, 0.82f)));
 
 
-        AddMeshToList(tema1::CreateCircle("duck_head", glm::vec3(70, 0, 0), 20, glm::vec3(0.95f, 0.96f, 0.96f), true, .5f));
-        AddMeshToList(tema1::CreateCircle("duck_eye", glm::vec3(80, 0, 0), 3, glm::vec3(.0f, .0f, .0f), true, .7f));
-        AddMeshToList(tema1::CreateTriangle("duck_beak", glm::vec3(100, 0, 0),
+        duck->AddMesh(tema1::CreateCircle("duck_head", glm::vec3(70, 0, 0), 20, glm::vec3(0.95f, 0.96f, 0.96f), true, .5f));
+        duck->AddMesh(tema1::CreateCircle("duck_eye", glm::vec3(80, 0, 0), 3, glm::vec3(.0f, .0f, .0f), true, .7f));
+        duck->AddMesh(tema1::CreateTriangle("duck_beak", glm::vec3(100, 0, 0),
             glm::vec3(-10, 4, 0), glm::vec3(-10, -4, 0), glm::vec3(10, 0, 0),
             glm::vec3(0.87f, 0.49f, 0.1f)));
 
-        auto duck = new tema1::Duck();
-        duck->box = tema1::Rect(65, 110, 65, 80);
-
-        duck->AddMesh("duck_body");
-        duck->AddMesh("duck_left_wing");
-        duck->AddMesh("duck_right_wing");
-
-        duck->AddMesh("duck_head");
-        duck->AddMesh("duck_eye");
-        duck->AddMesh("duck_beak");
-
         complexObjects["duck"] = duck;
     }
+
+    ResetGame();
 }
 
 
@@ -230,7 +212,7 @@ void Tema1::Update(float deltaTimeSeconds) {
     {
         // Bullets
         complexObjects["bullet"]->position = glm::vec3(SCREEN_W - 25, SCREEN_H - 55, 0);
-        for (int i = 0; i < bullets; ++i) RenderComplex("bullet", deltaTimeSeconds, glm::vec3(-50 * i, 0, 0));
+        for (int i = 0; i < bullets; ++i) RenderComplex("bullet", deltaTimeSeconds, transform2D::Translate(-50 * i, 0));
         // Hearts
         glm::vec3 heartPos(SCREEN_W - 25, SCREEN_H - 90, 0);
         for (int i = 0; i < hp; ++i) RenderMesh2D(meshes["heart"], shaders["VertexColor"], transform2D::Translate(heartPos.x - 50 * i, heartPos.y));
@@ -247,7 +229,7 @@ void Tema1::Update(float deltaTimeSeconds) {
     }
 
 
-    RenderComplex("duck", deltaTimeSeconds, glm::vec3(0), redDuck, glm::vec3(1, 0.19f, 0.19f));
+    RenderComplex("duck", deltaTimeSeconds, glm::mat3(1), redDuck, glm::vec3(1, 0.19f, 0.19f));
     RenderComplex("cursor", deltaTimeSeconds);
 }
 
@@ -301,8 +283,7 @@ void Tema1::OnWindowResize(int width, int height) {
 
 
 void Tema1::ResetGame() {
-    auto* duck = static_cast<tema1::Duck*>(complexObjects["duck"]);
-    if (duck) duck->position.y = 0; // ascundem rata
+    static_cast<tema1::Duck*>(complexObjects["duck"])->position.y = 0; // ascundem rata
 
     status = 2;
     score = 0;
@@ -334,14 +315,16 @@ void Tema1::SetStatus(int status) {
     }
 }
 
-void Tema1::RenderComplex(std::string name, float deltaTime, glm::vec3 deltaPosition, bool customColor, glm::vec3 color) {
+void Tema1::RenderComplex(std::string name, float deltaTime, glm::mat3 finalTransform, bool customColor, glm::vec3 color) {
     tema1::Complex* c = complexObjects[name];
     c->Update(deltaTime, SCREEN_W, SCREEN_H);
+    if (!c->visible) return;
 
     auto parentMatrix = transform2D::Translate(c->position.x, c->position.y) * transform2D::Rotate(c->angle) * transform2D::Scale(c->scaleX, c->scaleY);
     for (auto& mesh : c->meshes) {
-        auto matrix = transform2D::Translate(deltaPosition.x, deltaPosition.y) * parentMatrix * c->meshMatrixes[mesh];
-        if (customColor) RenderMesh2D(meshes[mesh], matrix, color);
-        else RenderMesh2D(meshes[mesh], shaders["VertexColor"], matrix);
+        if (!mesh.second.visible) continue;
+        auto matrix = finalTransform * parentMatrix * mesh.second.modelMatrix;
+        if (customColor) RenderMesh2D(meshes[mesh.first], matrix, color);
+        else RenderMesh2D(meshes[mesh.first], shaders["VertexColor"], matrix);
     }
 }
