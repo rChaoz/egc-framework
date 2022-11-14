@@ -234,6 +234,10 @@ void Tema1::OnMouseBtnPress(int mouseX, int mouseY, int button, int mods) {
     // Check collision
     auto duck = static_cast<tema1::Duck*>(complexObjects["duck"]);
     if (duck->PointInBox(MouseToScreen(mouseX, mouseY))) SetStatus(1);
+    else if (--bullets <= 0) {
+        hp++;
+        SetStatus(2);
+    }
 }
 
 
