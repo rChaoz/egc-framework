@@ -78,7 +78,7 @@ void Tema1::Init() {
 
         // Heart
         glm::vec3 color(0.89f, 0.17f, 0.18f);
-        std::vector<VertexFormat> vertices = { VertexFormat(glm::vec3(0), color) };
+        std::vector<VertexFormat> vertices = { VertexFormat(glm::vec3(0, 0, 5), color) };
         std::vector<unsigned int> indices = { 0 };
 
         // Center at 0,0
@@ -88,19 +88,19 @@ void Tema1::Init() {
             float x = i;
             float y = (acosf(1 - abs(x / 10)) - M_PI) * 9;
             if (i == 0) y += 3;
-            vertices.push_back(VertexFormat(glm::vec3(x, y, 0), color));
+            vertices.push_back(VertexFormat(glm::vec3(x, y, 5), color));
             indices.push_back(++vertexNum);
         }
         // Right-top part
         for (int i = 0; i <= 10; i++) {
             float x = cosf(M_PI * i / 10) * 10 + 10, y = sinf(M_PI * i / 10) * 10;
-            vertices.push_back(VertexFormat(glm::vec3(x, y, 0), color));
+            vertices.push_back(VertexFormat(glm::vec3(x, y, 5), color));
             indices.push_back(++vertexNum);
         }
         // Left-top part
         for (int i = 0; i <= 10; i++) {
             float x = -cosf(M_PI * i / 10) * 10 - 10, y = sinf(M_PI * i / 10) * 10;
-            vertices.push_back(VertexFormat(glm::vec3(x, y, 0), color));
+            vertices.push_back(VertexFormat(glm::vec3(x, y, 5), color));
             indices.push_back(++vertexNum);
         }
 
@@ -110,7 +110,10 @@ void Tema1::Init() {
         AddMeshToList(heart);
     }
     // Player timer & score
-    complexObjects["timer"] = new tema1::Timer(meshes, SCREEN_W);
+    {
+        complexObjects["timer"] = new tema1::Timer(meshes, SCREEN_W);
+        complexObjects["score"] = new tema1::Score(meshes);
+    }
 
     // Game Starting / Over UI
     {
@@ -149,7 +152,7 @@ void Tema1::Update(float deltaTimeSeconds) {
     const bool redDuck = shotTimer < 1;
 
     if (status != 0 && status != -2 && spawnTimer < 0) {
-        if (hp > 0 && bullets > 0) SetStatus(0);
+        if (hp > 0) SetStatus(0);
         else SetStatus(-2);
     }
     if (status == 0) {
@@ -179,6 +182,8 @@ void Tema1::Update(float deltaTimeSeconds) {
         // Hearts
         glm::vec3 heartPos(SCREEN_W - 25, SCREEN_H - 90, 0);
         for (int i = 0; i < hp; ++i) RenderMesh2D(meshes["heart"], shaders["VertexColor"], transform2D::Translate(heartPos.x - 50 * i, heartPos.y));
+        // Score
+        RenderComplex("score", deltaTimeSeconds);
         // Player timer
         static_cast<tema1::Timer*>(complexObjects["timer"])->cover = 1 - playerTimer / maxTimer;
         RenderComplex("timer", deltaTimeSeconds);
@@ -234,10 +239,7 @@ void Tema1::OnMouseBtnPress(int mouseX, int mouseY, int button, int mods) {
     // Check collision
     auto duck = static_cast<tema1::Duck*>(complexObjects["duck"]);
     if (duck->PointInBox(MouseToScreen(mouseX, mouseY))) SetStatus(1);
-    else if (--bullets <= 0) {
-        hp++;
-        SetStatus(2);
-    }
+    else if (--bullets <= 0) SetStatus(2);
 }
 
 
@@ -259,7 +261,7 @@ void Tema1::ResetGame() {
     static_cast<tema1::StartCountdown*>(complexObjects["startCountdown"])->Start(3);
 
     status = -1;
-    score = 0;
+    static_cast<tema1::Score*>(complexObjects["score"])->score = 0;
     hp = bullets = 3;
 
     shotTimer = 100;
@@ -267,27 +269,31 @@ void Tema1::ResetGame() {
 }
 
 void Tema1::SetStatus(int status) {
-    auto* duck = static_cast<tema1::Duck*>(complexObjects["duck"]);
+    auto duck = static_cast<tema1::Duck*>(complexObjects["duck"]);
+    auto scoreObj = static_cast<tema1::Score*>(complexObjects["score"]);
     duck->SetStatus(status, SCREEN_W, SCREEN_H);
-    duck->score = score;
     this->status = status;
 
     if (status == 0) {
         bullets = 3;
-        playerTimer = 6 - score / 5;
+        playerTimer = 6 - scoreObj->score / 5;
         if (playerTimer < 2) playerTimer = 2;
         maxTimer = playerTimer;
-        duck->speed = tema1::Duck::baseSpeed * (1 + score / 10.0f);
     }
     else if (status == 1) {
         spawnTimer = 1.5f;
         shotTimer = 0;
-        score++;
+        scoreObj->score++;
     }
     else if (status == 2) {
         hp--;
         spawnTimer = 1.5f;
     }
+    else if (status == -2) {
+        scoreObj->highScore = scoreObj->score;
+    }
+
+    duck->score = scoreObj->score;
 }
 
 void Tema1::RenderComplex(std::string name, float deltaTime, glm::mat3 finalTransform, bool customColor, glm::vec3 color) {

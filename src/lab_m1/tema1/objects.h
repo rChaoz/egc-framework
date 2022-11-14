@@ -62,8 +62,18 @@ namespace tema1 {
         void Update(float deltaTime, int screenW, int screenH) override;
     };
 
-    class Timer : public Complex {
+    class Score : public Complex {
+    private:
+        static constexpr float WIDTH = 136, HEIGHT = 20, MARGIN_RIGHT = 4, MARGIN_TOP = 145;
+    public:
+        static constexpr int MAX_SCORE = 40.0f;
+        int score, highScore, maxScore;
 
+        Score(std::unordered_map<std::string, Mesh*>& worldMeshMap, int maxScore = MAX_SCORE);
+        void Update(float deltaTime, int screenW, int screenH) override;
+    };
+
+    class Timer : public Complex {
     public:
         float cover;
 
@@ -74,7 +84,7 @@ namespace tema1 {
     class Duck : public Complex {
     private:
         // Configurare rata
-        static constexpr float flapWideness = .25f;
+        static constexpr float baseSpeed = 150.0f, baseFlapSpeed = 7.0f, flapWideness = .25f;
         float flapAngle, animationTimer, startingHeight, randomTimer;
         // 0 - zboara, 1 - moare (RIP), 2 - a evadat, bravo!
         int status;
@@ -82,9 +92,6 @@ namespace tema1 {
     public:
         // Util sa faca rata mai turbo cand se ajunge la un scor mare
         int score;
-
-        static constexpr float baseSpeed = 150.0f;
-        float speed;
 
         Duck(std::unordered_map<std::string, Mesh*>& worldMeshMap);
 

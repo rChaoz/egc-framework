@@ -170,6 +170,27 @@ void tema1::StartCountdown::Update(float deltaTime, int screenW, int screenH) {
     meshes["startCountdown_3"].visible = timer < div;
 }
 
+// SCORE
+tema1::Score::Score(std::unordered_map<std::string, Mesh*>& worldMeshMap, int maxScore) : Complex(worldMeshMap) {
+    score = highScore = 0;
+    this->maxScore = maxScore;
+
+    AddMesh(CreateRect("score", glm::vec3(-WIDTH / 2, 0, 0), WIDTH, HEIGHT, glm::vec3(1, 0.93f, 0.22f), true, 5.0f));
+    AddMesh(CreateRect("score_cover", glm::vec3(-(WIDTH - 6) / 2, 0, 0), WIDTH - 6, HEIGHT - 6, glm::vec3(0), true, 5.5f));
+    AddMesh(CreateRect("score_high", glm::vec3(0), 3, HEIGHT - 6, glm::vec3(.9f, .1f, .1f), true, 5.8f));
+}
+void tema1::Score::Update(float deltaTime, int screenW, int screenH) {
+    position.x = screenW - MARGIN_RIGHT;
+    position.y = screenH - MARGIN_TOP;
+
+    float scorePercent = 1 - static_cast<float>(score) / MAX_SCORE;
+
+    meshes["score_cover"].visible = score < MAX_SCORE;
+    meshes["score_cover"].modelMatrix = transform2D::Translate(-3, 0) * transform2D::Scale(scorePercent, 1);
+    meshes["score_high"].visible = highScore > 0;
+    meshes["score_high"].modelMatrix = transform2D::Translate(-std::fmaxf(scorePercent, 0) * (WIDTH - 6) - 3, 0);
+}
+
 // TIMER
 tema1::Timer::Timer(std::unordered_map<std::string, Mesh*>& worldMeshMap, int screenW): Complex(worldMeshMap) {
     cover = 0;
@@ -199,7 +220,6 @@ void tema1::Timer::Update(float deltaTime, int screenW, int screenH) {
 
 // DUCK
 tema1::Duck::Duck(std::unordered_map<std::string, Mesh*>& worldMeshMap) : Complex(worldMeshMap) {
-    speed = baseSpeed;
     flapAngle = animationTimer = randomTimer = startingHeight = 0.0f;
     status = score = 0;
 
@@ -255,7 +275,12 @@ void tema1::Duck::SetStatus(int newStatus, int screenW, int screenH) {
 
 void tema1::Duck::Update(float deltaTime, int screenW, int screenH) {
     // Rata da din aripi
-    flapAngle += deltaTime * speed / (status == 0 ? 20 : status == 1 ? 10 : 15);
+    float speed = baseSpeed * (1 + score / 10.0f);
+    float flapSpeed = baseFlapSpeed * (1 + score / 20.0f);
+    if (status == 1) flapSpeed *= 2.0f;
+    else if (status == 2) flapSpeed *= 1.5f;
+
+    flapAngle += deltaTime * flapSpeed;
     if (flapAngle > 2 * M_PI) flapAngle -= 2 * M_PI;
     float amount = sinf(this->flapAngle) * flapWideness;
 

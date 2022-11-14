@@ -35,7 +35,7 @@ namespace m1
         void RenderComplex(std::string name, float deltaTime, glm::mat3 finalTransform = glm::mat3(1), bool customColor = false, glm::vec3 color = glm::vec3(0));
         void SetStatus(int status);
      protected:
-         int SCREEN_W, SCREEN_H, status, score, hp, bullets;
+         int SCREEN_W, SCREEN_H, status, hp, bullets;
          float shotTimer, spawnTimer, playerTimer, maxTimer;
          /* Statuses:
          * -2 - game over
