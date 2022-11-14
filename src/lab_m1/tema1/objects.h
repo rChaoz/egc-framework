@@ -75,11 +75,14 @@ namespace tema1 {
     private:
         // Configurare rata
         static constexpr float flapWideness = .25f;
-        float flapAngle, animationTimer, startingHeight;
+        float flapAngle, animationTimer, startingHeight, randomTimer;
         // 0 - zboara, 1 - moare (RIP), 2 - a evadat, bravo!
         int status;
 
     public:
+        // Util sa faca rata mai turbo cand se ajunge la un scor mare
+        int score;
+
         static constexpr float baseSpeed = 150.0f;
         float speed;
 

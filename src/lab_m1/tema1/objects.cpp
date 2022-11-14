@@ -149,9 +149,9 @@ tema1::StartCountdown::StartCountdown(std::unordered_map<std::string, Mesh*>& wo
     timer = 0;
 
     const glm::vec3 color(0.95f, 0.79f, 0.05f);
-    AddMesh(CreateRect("startCountdown_1", glm::vec3(-80, 0, 0), 40, 150, color, true, 15));
-    AddMesh(CreateRect("startCountdown_2", glm::vec3(0, 0, 0), 40, 150, color, true, 15));
-    AddMesh(CreateRect("startCountdown_3", glm::vec3(80, 0, 0), 40, 150, color, true, 15));
+    AddMesh(CreateRect("startCountdown_1", glm::vec3(-80, 0, 0), 40, 150, color, true, 11));
+    AddMesh(CreateRect("startCountdown_2", glm::vec3(0, 0, 0), 40, 150, color, true, 11));
+    AddMesh(CreateRect("startCountdown_3", glm::vec3(80, 0, 0), 40, 150, color, true, 11));
 }
 
 void tema1::StartCountdown::Start(float timer) {
@@ -200,8 +200,8 @@ void tema1::Timer::Update(float deltaTime, int screenW, int screenH) {
 // DUCK
 tema1::Duck::Duck(std::unordered_map<std::string, Mesh*>& worldMeshMap) : Complex(worldMeshMap) {
     speed = baseSpeed;
-    flapAngle = animationTimer = startingHeight = 0.0f;
-    status = 0;
+    flapAngle = animationTimer = randomTimer = startingHeight = 0.0f;
+    status = score = 0;
 
     box = tema1::Rect(65, 110, 65, 80);
 
@@ -289,22 +289,38 @@ void tema1::Duck::Update(float deltaTime, int screenW, int screenH) {
     position.x += cos(angle) * d;
     position.y += sin(angle) * d;
 
+    bool changed = false;
     if (position.x - box.left < 0) {
         position.x = box.left;
         angle = M_PI - angle;
+        changed = true;
     }
     else if (position.x + box.right > screenW) {
         position.x = screenW - box.right;
         angle = M_PI - angle;
+        changed = true;
     }
     if (position.y - box.bottom < 0) {
         position.y = box.bottom;
         angle = -angle;
+        changed = true;
     }
     else if (position.y + box.top > screenH) {
         position.y = screenH - box.top;
         angle = -angle;
+        changed = true;
     }
+
+    randomTimer -= deltaTime;
+    if (!changed && randomTimer < 0) {
+        randomTimer = .5f;
+
+        if (rand() % 100 < score) {
+            if (rand() % 2 == 0) angle = M_PI - angle;
+            else angle = -angle;
+        }
+    }
+
     if (angle < 0) angle += 2 * M_PI;
 
     // Atunci cand rata se roteste 180, ochiul care era "sus" (deasupra ciocului) va ajunge "jos"

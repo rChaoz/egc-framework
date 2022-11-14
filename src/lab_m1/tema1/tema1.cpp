@@ -116,8 +116,8 @@ void Tema1::Init() {
     {
         glm::vec3 xColor(0.6f, 0.09f, 0.09f);
         tema1::Complex* gameOver = new tema1::Complex(meshes);
-        gameOver->AddMesh(tema1::CreateRect("gameOver_1", glm::vec3(0), 250, 20, xColor, true, 20), transform2D::Rotate(AI_DEG_TO_RAD(45)));
-        gameOver->AddMesh(tema1::CreateRect("gameOver_2", glm::vec3(0), 250, 20, xColor, true, 20), transform2D::Rotate(AI_DEG_TO_RAD(-45)));
+        gameOver->AddMesh(tema1::CreateRect("gameOver_1", glm::vec3(0), 250, 20, xColor, true, 11), transform2D::Rotate(AI_DEG_TO_RAD(45)));
+        gameOver->AddMesh(tema1::CreateRect("gameOver_2", glm::vec3(0), 250, 20, xColor, true, 11), transform2D::Rotate(AI_DEG_TO_RAD(-45)));
         complexObjects["gameOver"] = gameOver;
 
         complexObjects["startCountdown"] = new tema1::StartCountdown(meshes);
@@ -269,11 +269,13 @@ void Tema1::ResetGame() {
 void Tema1::SetStatus(int status) {
     auto* duck = static_cast<tema1::Duck*>(complexObjects["duck"]);
     duck->SetStatus(status, SCREEN_W, SCREEN_H);
+    duck->score = score;
     this->status = status;
 
     if (status == 0) {
+        bullets = 3;
         playerTimer = 6 - score / 5;
-        if (playerTimer < 1) playerTimer = 1;
+        if (playerTimer < 2) playerTimer = 2;
         maxTimer = playerTimer;
         duck->speed = tema1::Duck::baseSpeed * (1 + score / 10.0f);
     }
