@@ -106,13 +106,9 @@ bool tema1::Rect::ContainsPoint(glm::vec2 point) {
     if (bottom > max) max = bottom;
     glm::vec2 start(-2 * max, 10);
 
-    std::cout << "start(" << start.x << ", " << start.y << ")  ";
-    std::cout << "point(" << point.x << ", " << point.y << ")  " << std::endl;
     int count = 0;
     for (int i = 0; i < 4; ++i) {
         glm::vec2 a = points[i], b = points[i == 3 ? 0 : i + 1];
-        std::cout << "a(" << a.x << ", " << a.y << ")  ";
-        std::cout << "b(" << a.x << ", " << a.y << ")  " << std::endl;
         if (intersect(a, b, start, point)) ++count;
     }
 
@@ -172,6 +168,33 @@ void tema1::StartCountdown::Update(float deltaTime, int screenW, int screenH) {
     float div = timerTotal / 3;
     meshes["startCountdown_2"].visible = timer < 2 * div;
     meshes["startCountdown_3"].visible = timer < div;
+}
+
+// TIMER
+tema1::Timer::Timer(std::unordered_map<std::string, Mesh*>& worldMeshMap, int screenW): Complex(worldMeshMap) {
+    cover = 0;
+
+    glm::vec3 red(1, .1f, .1f), green(.1f, 1, .1f);
+    std::vector<VertexFormat> vertices = {
+        VertexFormat(glm::vec3(-screenW / 6, -5, 10.2f), red),
+        VertexFormat(glm::vec3(screenW / 6, -5, 10.2f), green),
+        VertexFormat(glm::vec3(screenW / 6, 5, 10.2f), green),
+        VertexFormat(glm::vec3(-screenW / 6, 5, 10.2f), red)
+    };
+    std::vector<unsigned int> indices{ 0, 1, 2, 2, 3, 0 };
+
+    Mesh* timer = new Mesh("timer");
+    timer->InitFromData(vertices, indices);
+    AddMesh(timer);
+    AddMesh(CreateRect("timer_cover", glm::vec3(-screenW / 6, 0, 0), screenW / 3, 10, glm::vec3(.1f), true, 10.5f));
+    AddMesh(CreateRect("timer_outline", glm::vec3(0), screenW / 3 + 4, 14, glm::vec3(.1f), true, 10.0f));
+}
+
+void tema1::Timer::Update(float deltaTime, int screenW, int screenH) {
+    position.x = screenW / 2;
+    position.y = screenH - 7;
+    // Scale cover
+    meshes["timer_cover"].modelMatrix = transform2D::Translate(screenW / 6, 0)  * transform2D::Scale(cover, 1);
 }
 
 // DUCK

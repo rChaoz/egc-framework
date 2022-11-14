@@ -110,23 +110,8 @@ void Tema1::Init() {
         AddMeshToList(heart);
     }
     // Player timer & score
-    {
-        glm::vec3 red(1, .1f, .1f), green(.1f, 1, .1f);
-        std::vector<VertexFormat> vertices = {
-            VertexFormat(glm::vec3(SCREEN_W / 3 + 1, -5, 10.2f), red),
-            VertexFormat(glm::vec3(SCREEN_W * 2 / 3, -5, 10.2f), green),
-            VertexFormat(glm::vec3(SCREEN_W * 2 / 3, 5, 10.2f), green),
-            VertexFormat(glm::vec3(SCREEN_W / 3 + 1, 5, 10.2f), red)
-        };
-        std::vector<unsigned int> indices { 0, 1, 2, 2, 3, 0 };
+    complexObjects["timer"] = new tema1::Timer(meshes, SCREEN_W);
 
-        Mesh* timer = new Mesh("timer");
-        timer->InitFromData(vertices, indices);
-        AddMeshToList(timer);
-        AddMeshToList(tema1::CreateRect("timer_cover", glm::vec3(-SCREEN_W / 6, 0, 0), SCREEN_W / 3, 10, glm::vec3(.1f), true, 10.5f));
-        AddMeshToList(tema1::CreateRect("timer_outline", glm::vec3(SCREEN_W / 2, 0, 0), SCREEN_W / 3 + 4, 14, glm::vec3(.1f), true, 10.0f));
-        // TODO score
-    }
     // Game Starting / Over UI
     {
         glm::vec3 xColor(0.6f, 0.09f, 0.09f);
@@ -163,8 +148,8 @@ void Tema1::Update(float deltaTimeSeconds) {
     spawnTimer -= deltaTimeSeconds;
     const bool redDuck = shotTimer < 1;
 
-    if (status != 0 && spawnTimer < 0) {
-        if (hp > 0) SetStatus(0);
+    if (status != 0 && status != -2 && spawnTimer < 0) {
+        if (hp > 0 && bullets > 0) SetStatus(0);
         else SetStatus(-2);
     }
     if (status == 0) {
@@ -195,11 +180,10 @@ void Tema1::Update(float deltaTimeSeconds) {
         glm::vec3 heartPos(SCREEN_W - 25, SCREEN_H - 90, 0);
         for (int i = 0; i < hp; ++i) RenderMesh2D(meshes["heart"], shaders["VertexColor"], transform2D::Translate(heartPos.x - 50 * i, heartPos.y));
         // Player timer
-        RenderMesh2D(meshes["timer_outline"], shaders["VertexColor"], transform2D::Translate(0, SCREEN_H - 7));
-        RenderMesh2D(meshes["timer"], shaders["VertexColor"], transform2D::Translate(0, SCREEN_H - 7));
-        RenderMesh2D(meshes["timer_cover"], shaders["VertexColor"], transform2D::Translate(SCREEN_W * 2 / 3, SCREEN_H - 7) * transform2D::Scale(1 - playerTimer / maxTimer, 1));
+        static_cast<tema1::Timer*>(complexObjects["timer"])->cover = 1 - playerTimer / maxTimer;
+        RenderComplex("timer", deltaTimeSeconds);
 
-        // Game Startin /  Over UI
+        // Game Starting /  Over UI
         if (status == -2) {
             complexObjects["gameOver"]->position = glm::vec3(SCREEN_W / 2, SCREEN_H / 2 + SCREEN_H / 8, 0);
             RenderComplex("gameOver", deltaTimeSeconds);

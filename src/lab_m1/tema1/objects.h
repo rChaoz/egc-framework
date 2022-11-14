@@ -62,6 +62,15 @@ namespace tema1 {
         void Update(float deltaTime, int screenW, int screenH) override;
     };
 
+    class Timer : public Complex {
+
+    public:
+        float cover;
+
+        Timer(std::unordered_map<std::string, Mesh*>& worldMeshMap, int screenW);
+        void Update(float deltaTime, int screenW, int screenH) override;
+    };
+
     class Duck : public Complex {
     private:
         // Configurare rata
