@@ -126,6 +126,16 @@ tema1::Complex::Complex(std::unordered_map<std::string, Mesh*>& worldMeshMap) : 
     scaleX = scaleY = 1.0f;
 }
 
+tema1::Complex::~Complex() {
+    for (auto mesh : meshes) {
+        auto m = worldMeshMap[mesh.first];
+        if (m) {
+            delete m;
+            worldMeshMap.erase(mesh.first);
+        }
+    }
+}
+
 bool tema1::Complex::PointInBox(glm::vec2 point) {
     box.Update(angle, scaleX, scaleY);
     return box.ContainsPoint(point - position);
@@ -156,12 +166,17 @@ tema1::StartCountdown::StartCountdown(std::unordered_map<std::string, Mesh*>& wo
 
 void tema1::StartCountdown::Start(float timer) {
     timerTotal = timer;
+    visible = true;
     this->timer = 0;
 }
 
 void tema1::StartCountdown::Update(float deltaTime, int screenW, int screenH) {
     if (timer > timerTotal) return;
     timer += deltaTime;
+    if (timer > timerTotal) {
+        visible = false;
+        return;
+    }
     position.x = screenW / 2;
     position.y = screenH / 2;
 
@@ -216,6 +231,32 @@ void tema1::Timer::Update(float deltaTime, int screenW, int screenH) {
     position.y = screenH - 7;
     // Scale cover
     meshes["timer_cover"].modelMatrix = transform2D::Translate(screenW / 6, 0)  * transform2D::Scale(cover, 1);
+}
+
+// BULLET
+tema1::Bullet::Bullet(std::unordered_map<std::string, Mesh*>& worldMeshMap) : Complex(worldMeshMap) {
+    timer = -1;
+
+    AddMesh(CreateCircle("bullet_outer", glm::vec3(0), 30, glm::vec3(0.82f, 0.53f, 0.19f), true, 1.0f));
+    AddMesh(CreateCircle("bullet_inner", glm::vec3(0), 20, glm::vec3(0.53f, 0.3f, 0.1f), true, 1.1f));
+}
+
+void tema1::Bullet::Shoot(glm::vec2 point) {
+    position = point;
+    this->timer = TIME_TO_HIT;
+    visible = true;
+    scaleX = scaleY = 1.0f;
+}
+
+void tema1::Bullet::Update(float deltaTime, int screenW, int screenH) {
+    if (timer < 0) return;
+    timer -= deltaTime;
+    if (timer < 0) {
+        visible = false;
+        return;
+    }
+    scaleX = scaleY = (1 - SCALE_MIN) * (timer / TIME_TO_HIT) + SCALE_MIN;
+
 }
 
 // DUCK

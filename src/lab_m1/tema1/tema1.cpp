@@ -62,10 +62,10 @@ void Tema1::Init() {
     {
         auto *cursor = new tema1::Complex(meshes);
         glm::vec3 color(1, 0.28f, 0.28f);
-        cursor->AddMesh(tema1::CreateRect("cursor_1", glm::vec3(0), 20, 3, color, true, 15.5f), transform2D::Rotate(M_PI_4));
-        cursor->AddMesh(tema1::CreateRect("cursor_1_shadow", glm::vec3(0), 20, 3, glm::vec3(0), true, 15.0f), transform2D::Translate(2, -2) * transform2D::Rotate(M_PI_4));
-        cursor->AddMesh(tema1::CreateRect("cursor_2", glm::vec3(0), 20, 3, color, true, 15.5f), transform2D::Rotate(-M_PI_4));
-        cursor->AddMesh(tema1::CreateRect("cursor_2_shadow", glm::vec3(0), 20, 3, glm::vec3(0), true, 15.0f), transform2D::Translate(2, -2) * transform2D::Rotate(-M_PI_4));
+        cursor->AddMesh(tema1::CreateRect("cursor_1", glm::vec3(0), 20, 2, color, true, 15.5f), transform2D::Rotate(M_PI_4));
+        cursor->AddMesh(tema1::CreateRect("cursor_1_shadow", glm::vec3(0), 20, 2, glm::vec3(0), true, 15.0f), transform2D::Translate(1, -1) * transform2D::Rotate(M_PI_4));
+        cursor->AddMesh(tema1::CreateRect("cursor_2", glm::vec3(0), 20, 2, color, true, 15.5f), transform2D::Rotate(-M_PI_4));
+        cursor->AddMesh(tema1::CreateRect("cursor_2_shadow", glm::vec3(0), 20, 2, glm::vec3(0), true, 15.0f), transform2D::Translate(1, -1) * transform2D::Rotate(-M_PI_4));
         complexObjects["cursor"] = cursor;
     }
     // Bullet & heart objects
@@ -74,7 +74,7 @@ void Tema1::Init() {
         auto* bullet = new tema1::Complex(meshes);
         bullet->AddMesh(tema1::CreateCircle("bullet_top", glm::vec3(0, 30, 0), 8, glm::vec3(0.53f, 0.3f, 0.1f), true, 5.0f));
         bullet->AddMesh(tema1::CreateRect("bullet_bot", glm::vec3(0, 15, 0), 16, 30, glm::vec3(0.82f, 0.53f, 0.19f), true, 5.5f));
-        complexObjects["bullet"] = bullet;
+        complexObjects["bullet-ui"] = bullet;
 
         // Heart
         glm::vec3 color(0.89f, 0.17f, 0.18f);
@@ -127,6 +127,7 @@ void Tema1::Init() {
     }
     // Create duck
     complexObjects["duck"] = new tema1::Duck(meshes);
+    complexObjects["bullet"] = new tema1::Bullet(meshes);
 
     ResetGame();
 }
@@ -148,8 +149,16 @@ void Tema1::FrameStart() {
 void Tema1::Update(float deltaTimeSeconds) {
     // Game logic
     shotTimer += deltaTimeSeconds;
+    if (status == 0 && shotTimer > tema1::Bullet::TIME_TO_HIT) {
+        auto duck = static_cast<tema1::Duck*>(complexObjects["duck"]);
+        auto bullet = static_cast<tema1::Bullet*>(complexObjects["bullet"]);
+        if (duck->PointInBox(bullet->position)) SetStatus(1);
+        else if (--bullets <= 0) SetStatus(2);
+        shotTimer = -100;
+    }
+
     spawnTimer -= deltaTimeSeconds;
-    const bool redDuck = shotTimer < 1;
+    const bool redDuck = status == 1 && shotTimer < 1.5f;
 
     if (status != 0 && status != -2 && spawnTimer < 0) {
         if (hp > 0) SetStatus(0);
@@ -177,8 +186,8 @@ void Tema1::Update(float deltaTimeSeconds) {
     // Draw UI
     {
         // Bullets
-        complexObjects["bullet"]->position = glm::vec3(SCREEN_W - 25, SCREEN_H - 55, 0);
-        for (int i = 0; i < bullets; ++i) RenderComplex("bullet", deltaTimeSeconds, transform2D::Translate(-50 * i, 0));
+        complexObjects["bullet-ui"]->position = glm::vec3(SCREEN_W - 25, SCREEN_H - 55, 0);
+        for (int i = 0; i < bullets; ++i) RenderComplex("bullet-ui", deltaTimeSeconds, transform2D::Translate(-50 * i, 0));
         // Hearts
         glm::vec3 heartPos(SCREEN_W - 25, SCREEN_H - 90, 0);
         for (int i = 0; i < hp; ++i) RenderMesh2D(meshes["heart"], shaders["VertexColor"], transform2D::Translate(heartPos.x - 50 * i, heartPos.y));
@@ -196,8 +205,9 @@ void Tema1::Update(float deltaTimeSeconds) {
         else if (status == -1) RenderComplex("startCountdown", deltaTimeSeconds);
     }
 
-
+    // Rest
     RenderComplex("duck", deltaTimeSeconds, glm::mat3(1), redDuck, glm::vec3(1, 0.19f, 0.19f));
+    RenderComplex("bullet", deltaTimeSeconds);
     RenderComplex("cursor", deltaTimeSeconds);
 }
 
@@ -234,12 +244,10 @@ void Tema1::OnMouseBtnPress(int mouseX, int mouseY, int button, int mods) {
         ResetGame();
         return;
     }
-    else if (status != 0 || button != GLFW_MOUSE_BUTTON_2) return;
+    else if (status != 0 || button != GLFW_MOUSE_BUTTON_2 || (shotTimer >= 0 && shotTimer < tema1::Bullet::TIME_TO_HIT)) return;
     
-    // Check collision
-    auto duck = static_cast<tema1::Duck*>(complexObjects["duck"]);
-    if (duck->PointInBox(MouseToScreen(mouseX, mouseY))) SetStatus(1);
-    else if (--bullets <= 0) SetStatus(2);
+    static_cast<tema1::Bullet*>(complexObjects["bullet"])->Shoot(MouseToScreen(mouseX, mouseY));
+    shotTimer = 0;
 }
 
 
@@ -264,7 +272,7 @@ void Tema1::ResetGame() {
     static_cast<tema1::Score*>(complexObjects["score"])->score = 0;
     hp = bullets = 3;
 
-    shotTimer = 100;
+    shotTimer = -100;
     spawnTimer = 3;
 }
 
@@ -275,6 +283,7 @@ void Tema1::SetStatus(int status) {
     this->status = status;
 
     if (status == 0) {
+        shotTimer = -100;
         bullets = 3;
         playerTimer = 6 - scoreObj->score / 5;
         if (playerTimer < 2) playerTimer = 2;

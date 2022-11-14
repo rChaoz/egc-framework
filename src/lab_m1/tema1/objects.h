@@ -39,6 +39,7 @@ namespace tema1 {
         std::unordered_map<std::string, ComplexMesh> meshes;
 
         Complex(std::unordered_map<std::string, Mesh*>& worldMeshMap);
+        ~Complex();
 
         bool visible;
         glm::vec2 position;
@@ -66,7 +67,7 @@ namespace tema1 {
     private:
         static constexpr float WIDTH = 136, HEIGHT = 20, MARGIN_RIGHT = 4, MARGIN_TOP = 145;
     public:
-        static constexpr int MAX_SCORE = 40.0f;
+        static constexpr int MAX_SCORE = 50;
         int score, highScore, maxScore;
 
         Score(std::unordered_map<std::string, Mesh*>& worldMeshMap, int maxScore = MAX_SCORE);
@@ -78,6 +79,18 @@ namespace tema1 {
         float cover;
 
         Timer(std::unordered_map<std::string, Mesh*>& worldMeshMap, int screenW);
+        void Update(float deltaTime, int screenW, int screenH) override;
+    };
+
+    class Bullet : public Complex {
+    private:
+        static constexpr float SCALE_MIN = .1f;
+        float timer;
+    public:
+        static constexpr float TIME_TO_HIT = .2;
+
+        Bullet(std::unordered_map<std::string, Mesh*>& worldMeshMap);
+        virtual void Shoot(glm::vec2 point);
         void Update(float deltaTime, int screenW, int screenH) override;
     };
 
