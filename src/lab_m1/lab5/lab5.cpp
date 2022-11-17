@@ -53,7 +53,7 @@ void Lab5::FrameStart()
 {
 
     projectionMatrix = orthoProjection
-        ? glm::ortho(projectionWidth /2, projectionWidth /2, projectionHeight /2, projectionHeight /2, .01f, 200.0f)
+        ? glm::ortho(-projectionWidth /2, projectionWidth /2, -projectionHeight /2, projectionHeight /2, .01f, 200.0f)
         : glm::perspective(RADIANS(projectionFov), window->props.aspectRatio, 0.01f, 200.0f);
     // Clears the color buffer (using the previously set color) and depth buffer
     glClearColor(0, 0, 0, 1);
@@ -187,17 +187,17 @@ void Lab5::OnInputUpdate(float deltaTime, int mods)
     }
     
     if (window->KeyHold(GLFW_KEY_3)) {
-        projectionWidth += deltaTime;
+        projectionWidth += 5 * deltaTime;
     }
     if (window->KeyHold(GLFW_KEY_4)) {
-        projectionWidth -= deltaTime;
+        projectionWidth -= 5 * deltaTime;
     }
     
     if (window->KeyHold(GLFW_KEY_5)) {
-        projectionHeight += deltaTime;
+        projectionHeight += 5 * deltaTime;
     }
     if (window->KeyHold(GLFW_KEY_6)) {
-        projectionHeight -= deltaTime;
+        projectionHeight -= 5 * deltaTime;
     }
 
     // TODO(student): Change projection parameters. Declare any extra
