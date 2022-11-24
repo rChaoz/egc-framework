@@ -3,3 +3,4 @@ build*
 /**/.vs
 /**/obj
 components_hidden
+/*.zip
