@@ -50,7 +50,7 @@ void main()
         specular = material_ks * object_color * pow(max(dot(V, reflect (-L, N)), 0), material_shininess);
     }
 
-    float atenuare = 1 / distance(light_position, eye_position);
+    float atenuare = 1 / distance(light_position, world_pos);
 
     color = ambient + atenuare * (diffuse + specular);
 
