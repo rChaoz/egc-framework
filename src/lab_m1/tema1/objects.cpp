@@ -198,12 +198,13 @@ void tema1::Score::Update(float deltaTime, int screenW, int screenH) {
     position.x = screenW - MARGIN_RIGHT;
     position.y = screenH - MARGIN_TOP;
 
-    float scorePercent = 1 - static_cast<float>(score) / MAX_SCORE;
+    float scorePercent = std::fmaxf(1 - static_cast<float>(score) / MAX_SCORE, 0);
+    float highScorePercent = std::fmaxf(1 - static_cast<float>(highScore) / MAX_SCORE, 0);
 
     meshes["score_cover"].visible = score < MAX_SCORE;
     meshes["score_cover"].modelMatrix = transform2D::Translate(-3, 0) * transform2D::Scale(scorePercent, 1);
     meshes["score_high"].visible = highScore > 0;
-    meshes["score_high"].modelMatrix = transform2D::Translate(-std::fmaxf(scorePercent, 0) * (WIDTH - 6) - 3, 0);
+    meshes["score_high"].modelMatrix = transform2D::Translate(-highScorePercent * (WIDTH - 6) - 3, 0);
 }
 
 // TIMER
