@@ -1,4 +1,5 @@
 #include "lab_m1/Tema3/Tema3.h"
+#include "lab_m1/lab5/lab_camera.h"
 
 #include <vector>
 #include <string>
@@ -20,31 +21,42 @@ Tema3::~Tema3()
 
 void Tema3::Init()
 {
+    // SEtup camera
+    //GetCameraInput()->SetActive(false);
+    GetSceneCamera()->SetPosition(glm::vec3(0, 10, 15));
+    GetSceneCamera()->RotateOX(-300);
+    GetSceneCamera()->Update();
+    
+
+    position.x = position.y = speed.x = 0;
+    speed.y = 5;
+
     const string sourceTextureDir = PATH_JOIN(window->props.selfDir, SOURCE_PATH::M1, "tema3", "textures");
     const string sourceModelsDir = PATH_JOIN(window->props.selfDir, SOURCE_PATH::M1, "tema3", "models");
 
     // Load textures
-    //{
-    //    Texture2D* texture = new Texture2D();
-    //    texture->Load2D(PATH_JOIN(sourceTextureDir, "grass_bilboard.png").c_str(), GL_REPEAT);
-    //    mapTextures["grass"] = texture;
-    //}
+    {
+        Texture2D* texture = new Texture2D();
+        texture->Load2D(PATH_JOIN(sourceTextureDir, "snow.jpg").c_str(), GL_REPEAT);
+        mapTextures["ground"] = texture;
+    }
 
     // Load meshes
     {
-        Complex* character = new Complex(meshes, glm::vec3(.7, .36, .1)); // glm::vec3(1, .56, .1)
-        character->scale = glm::vec3(.05);
-        character->position.y = 1.2f;
+        // Player
+        Complex* player = new Complex(meshes, glm::vec3(.7, .36, .1)); // glm::vec3(1, .56, .1)
+        player->scale = glm::vec3(.05);
+        player->position.y = 1.2f;
 
         Mesh* skis = new Mesh("skis");
         skis->LoadMesh(sourceModelsDir, "Ski.stl");
-        character->AddMesh(skis, transform3D::Translate(-6.1f, -18, 11) * transform3D::RotateOY(-M_PI_2));
+        player->AddMesh(skis, transform3D::Translate(-6.1f, -18, 11) * transform3D::RotateOY(-M_PI_2));
 
         Mesh* kratos = new Mesh("kratos");
         kratos->LoadMesh(sourceModelsDir, "kratos.stl");
-        character->AddMesh(kratos, transform3D::Scale(.33f) * transform3D::RotateOX(M_PI_2));
+        player->AddMesh(kratos, transform3D::Scale(.33f) * transform3D::RotateOX(M_PI_2));
 
-        complexObjects["character"] = character;
+        complexObjects["player"] = player;
     }
     //{
     //    Mesh* mesh = new Mesh("box");
@@ -56,10 +68,10 @@ void Tema3::Init()
     {
         vector<glm::vec3> vertices
         {
-            glm::vec3(0.5f,   0.5f, 0.0f),    // top right
-            glm::vec3(0.5f,  -0.5f, 0.0f),    // bottom right
-            glm::vec3(-0.5f, -0.5f, 0.0f),    // bottom left
-            glm::vec3(-0.5f,  0.5f, 0.0f),    // top left
+            glm::vec3(100,  0,  100),    // top right
+            glm::vec3(100,  0, -100),    // bottom right
+            glm::vec3(-100, 0, -100),    // bottom left
+            glm::vec3(-100, 0,  100),    // top left
         };
 
         vector<glm::vec3> normals
@@ -72,10 +84,10 @@ void Tema3::Init()
 
         vector<glm::vec2> textureCoords
         {
-            glm::vec2(1, 1),
-            glm::vec2(1, 0),
+            glm::vec2(100, 100),
+            glm::vec2(100, 0),
             glm::vec2(0, 0),
-            glm::vec2(0, 1),
+            glm::vec2(0, 100),
         };
 
         vector<unsigned int> indices =
@@ -84,15 +96,22 @@ void Tema3::Init()
             1, 2, 3
         };
 
-        Mesh* mesh = new Mesh("square");
+        Mesh* mesh = new Mesh("ground");
         mesh->InitFromData(vertices, normals, textureCoords, indices);
         meshes[mesh->GetMeshID()] = mesh;
     }
 
-    // Shader
+    // Shaders
     {
         Shader *shader = new Shader("default");
         shader->AddShader(PATH_JOIN(window->props.selfDir, SOURCE_PATH::M1, "tema3", "shaders", "VertexShader.glsl"), GL_VERTEX_SHADER);
+        shader->AddShader(PATH_JOIN(window->props.selfDir, SOURCE_PATH::M1, "tema3", "shaders", "FragmentShader.glsl"), GL_FRAGMENT_SHADER);
+        shader->CreateAndLink();
+        shaders[shader->GetName()] = shader;
+    }
+    {
+        Shader* shader = new Shader("ground");
+        shader->AddShader(PATH_JOIN(window->props.selfDir, SOURCE_PATH::M1, "tema3", "shaders", "GroundVertexShader.glsl"), GL_VERTEX_SHADER);
         shader->AddShader(PATH_JOIN(window->props.selfDir, SOURCE_PATH::M1, "tema3", "shaders", "FragmentShader.glsl"), GL_FRAGMENT_SHADER);
         shader->CreateAndLink();
         shaders[shader->GetName()] = shader;
@@ -113,20 +132,61 @@ void Tema3::FrameStart()
 
 
 void Tema3::Update(float deltaTimeSeconds) {
+    // GAME LOGIC
+    position += deltaTimeSeconds * speed;
+
+    // RENDERING
+    
     //{
     //    glm::mat4 modelMatrix = glm::mat4(1);
     //    modelMatrix = glm::translate(modelMatrix, glm::vec3(1, 1, -3));
     //    modelMatrix = glm::scale(modelMatrix, glm::vec3(2));
     //    RenderSimpleMesh(meshes["sphere"], shaders["LabShader"], modelMatrix, mapTextures["earth"], mapTextures["grass"]);
     //}
-    RenderComplex("character", deltaTimeSeconds);
-    DrawCoordinateSystem();
+    // 
+
+    // Render ground
+    RenderGround();
+    RenderComplex("player", deltaTimeSeconds);
 }
 
 
 void Tema3::FrameEnd() {
 }
 
+
+void Tema3::RenderGround() {
+    const auto shader = shaders["ground"];
+    // Render an object using the specified shader and the specified position
+    glUseProgram(shader->program);
+
+    // Bind model matrix
+    GLint loc_model_matrix = glGetUniformLocation(shader->program, "Model");
+    glUniformMatrix4fv(loc_model_matrix, 1, GL_FALSE, glm::value_ptr(glm::mat4(1)));
+
+    // Bind view matrix
+    glm::mat4 viewMatrix = GetSceneCamera()->GetViewMatrix();
+    int loc_view_matrix = glGetUniformLocation(shader->program, "View");
+    glUniformMatrix4fv(loc_view_matrix, 1, GL_FALSE, glm::value_ptr(viewMatrix));
+
+    // Bind projection matrix
+    glm::mat4 projectionMatrix = GetSceneCamera()->GetProjectionMatrix();
+    int loc_projection_matrix = glGetUniformLocation(shader->program, "Projection");
+    glUniformMatrix4fv(loc_projection_matrix, 1, GL_FALSE, glm::value_ptr(projectionMatrix));
+
+    // Bind texture
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, mapTextures["ground"]->GetTextureID());
+    glUniform1i(glGetUniformLocation(shader->program, "texture"), 1);
+    glUniform1i(glGetUniformLocation(shader->program, "useTexture"), 1);
+    glUniform3fv(glGetUniformLocation(shader->program, "overrideColor"), 1, glm::value_ptr(glm::vec3(2, 2, 2)));
+    glUniform2fv(glGetUniformLocation(shader->program, "textureCoordinatesDelta"), 1, glm::value_ptr(position));
+
+    // Draw the object
+    const auto *mesh = meshes["ground"];
+    glBindVertexArray(mesh->GetBuffers()->m_VAO);
+    glDrawElements(mesh->GetDrawMode(), static_cast<int>(mesh->indices.size()), GL_UNSIGNED_INT, 0);
+}
 
 void Tema3::RenderTexturedMesh(Mesh *mesh, Texture2D* texture, const glm::mat4& modelMatrix)
 {

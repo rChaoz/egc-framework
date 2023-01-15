@@ -24,6 +24,7 @@ bool InputController::IsActive() const
 
 void InputController::SetActive(bool value)
 {
+    if (isAttached == value) return;
     isAttached = value;
     value ? window->SubscribeToEvents(this) : window->UnsubscribeFromEvents(this);
 }

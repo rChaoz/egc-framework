@@ -26,6 +26,7 @@ namespace m1
         void Update(float deltaTimeSeconds) override;
         void FrameEnd() override;
 
+        void RenderGround();
         void RenderTexturedMesh(Mesh *mesh, Texture2D *texture, const glm::mat4 &modelMatrix = glm::mat4(1));
         void RenderColoredMesh(Mesh* mesh, const glm::mat4& modelMatrix = glm::mat4(1), const glm::vec3& color = glm::vec3(2, 2, 2));
         void RenderComplex(std::string name, float deltaTime, const glm::mat4 finalTransform = glm::mat4(1));
@@ -40,5 +41,7 @@ namespace m1
         void OnWindowResize(int width, int height) override;
 
         std::unordered_map<std::string, Texture2D *> mapTextures;
+        glm::vec2 position;
+        glm::vec2 speed;
     };
 }   // namespace m1

@@ -16,6 +16,10 @@ namespace transform3D
         ));
     }
 
+    inline glm::mat4 Translate(const glm::vec3& translate) {
+        return Translate(translate.x, translate.y, translate.z);
+    }
+
     // Scale matrix
     inline glm::mat4 Scale(float scaleX, float scaleY, float scaleZ)
     {
