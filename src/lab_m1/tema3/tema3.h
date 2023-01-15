@@ -40,8 +40,10 @@ namespace m1
         void OnMouseScroll(int mouseX, int mouseY, int offsetX, int offsetY) override;
         void OnWindowResize(int width, int height) override;
 
+        static constexpr float ROTATION_SPEED = 1.f;
         std::unordered_map<std::string, Texture2D *> mapTextures;
         glm::vec2 position;
-        glm::vec2 speed;
+        glm::vec2 speedV;
+        float speed, mouseX;
     };
 }   // namespace m1

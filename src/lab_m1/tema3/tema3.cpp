@@ -9,28 +9,24 @@ using namespace std;
 using namespace m1;
 using namespace tema3;
 
-Tema3::Tema3()
-{
+Tema3::Tema3() {
+    mouseX = 0;
+    position.x = position.y = speedV.x = 0;
+    speedV.y = speed = 5;
 }
 
 
-Tema3::~Tema3()
-{
+Tema3::~Tema3() {
 }
-
 
 void Tema3::Init()
 {
-    // SEtup camera
-    //GetCameraInput()->SetActive(false);
+    // Setup camera
+    GetCameraInput()->SetActive(false);
     GetSceneCamera()->SetPosition(glm::vec3(0, 10, 15));
     GetSceneCamera()->RotateOX(-300);
     GetSceneCamera()->Update();
     
-
-    position.x = position.y = speed.x = 0;
-    speed.y = 5;
-
     const string sourceTextureDir = PATH_JOIN(window->props.selfDir, SOURCE_PATH::M1, "tema3", "textures");
     const string sourceModelsDir = PATH_JOIN(window->props.selfDir, SOURCE_PATH::M1, "tema3", "models");
 
@@ -133,7 +129,23 @@ void Tema3::FrameStart()
 
 void Tema3::Update(float deltaTimeSeconds) {
     // GAME LOGIC
-    position += deltaTimeSeconds * speed;
+    // 
+    // Update based on mouse position
+    const auto player = complexObjects["player"];
+    float targetAngle = M_PI_4 - M_PI_2 * mouseX / window->GetResolution().x;
+    float oldAngle = player->angle.y, deltaAngle = targetAngle - oldAngle;
+    // Calculate new angle
+    float sign = deltaAngle < 0 ? -1 : deltaAngle > 0 ? 1 : 0;
+    float angle = oldAngle + sign * ROTATION_SPEED * deltaTimeSeconds;
+    if ((sign > 0 && angle > targetAngle) || (sign < 0 && angle < targetAngle)) angle = targetAngle;
+    cout << "Target angle: " << targetAngle << ", oldAngle:" << oldAngle << ", deltaAngle: " << deltaAngle << ", angle: " << angle << ", sign: " << sign << endl;
+    // Set player rotation & movement
+    player->angle.y = angle;
+    speedV.y = cosf(angle) * speed;
+    speedV.x = -sinf(angle) * speed;
+
+    // Update position
+    position += deltaTimeSeconds * speedV;
 
     // RENDERING
     
@@ -275,6 +287,7 @@ void Tema3::OnKeyRelease(int key, int mods) {
 
 
 void Tema3::OnMouseMove(int mouseX, int mouseY, int deltaX, int deltaY) {
+    this->mouseX = mouseX;
 }
 
 
