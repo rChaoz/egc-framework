@@ -9,6 +9,7 @@
 #include "components/simple_scene.h"
 #include "core/engine.h"
 #include "core/gpu/mesh.h"
+#include "../lab4/transform3D.h"
 
 namespace tema1 {
     Mesh* CreateRect(const std::string &name, glm::vec3 center, float width, float height, glm::vec3 color, bool fill = true, float zIndex = 0);

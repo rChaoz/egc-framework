@@ -5,6 +5,8 @@
 
 #include "components/simple_scene.h"
 #include "components/transform.h"
+#include "objects.h"
+#include "../lab4/transform3D.h"
 
 
 namespace m1
@@ -18,11 +20,15 @@ namespace m1
         void Init() override;
 
      private:
+        std::unordered_map<std::string, tema3::Complex*> complexObjects;
+
         void FrameStart() override;
         void Update(float deltaTimeSeconds) override;
         void FrameEnd() override;
 
-        void RenderSimpleMesh(Mesh *mesh, Shader *shader, const glm::mat4 &modelMatrix, Texture2D *texture = NULL);
+        void RenderTexturedMesh(Mesh *mesh, Texture2D *texture, const glm::mat4 &modelMatrix = glm::mat4(1));
+        void RenderColoredMesh(Mesh* mesh, const glm::mat4& modelMatrix = glm::mat4(1), const glm::vec3& color = glm::vec3(2, 2, 2));
+        void RenderComplex(std::string name, float deltaTime, const glm::mat4 finalTransform = glm::mat4(1));
 
         void OnInputUpdate(float deltaTime, int mods) override;
         void OnKeyPress(int key, int mods) override;

@@ -27,6 +27,10 @@ namespace transform3D
         ));
     }
 
+    inline glm::mat4 Scale(float scale) {
+        return Scale(scale, scale, scale);
+    }
+
     // Rotate matrix relative to the OZ axis
     inline glm::mat4 RotateOZ(float radians)
     {
@@ -58,5 +62,10 @@ namespace transform3D
             0, 0, 1, 0,
             0, 0, 0, 1
         ));
+    }
+
+    // Rotate matrix relative to OX, then OY, then OZ
+    inline glm::mat4 Rotate(float ox, float oy, float oz) {
+        return RotateOZ(oz) * RotateOY(oy) * RotateOX(ox);
     }
 }   // namespace transform3D

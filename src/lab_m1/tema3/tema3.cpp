@@ -6,6 +6,7 @@
 
 using namespace std;
 using namespace m1;
+using namespace tema3;
 
 Tema3::Tema3()
 {
@@ -20,6 +21,7 @@ Tema3::~Tema3()
 void Tema3::Init()
 {
     const string sourceTextureDir = PATH_JOIN(window->props.selfDir, SOURCE_PATH::M1, "tema3", "textures");
+    const string sourceModelsDir = PATH_JOIN(window->props.selfDir, SOURCE_PATH::M1, "tema3", "models");
 
     // Load textures
     //{
@@ -29,6 +31,21 @@ void Tema3::Init()
     //}
 
     // Load meshes
+    {
+        Complex* character = new Complex(meshes, glm::vec3(.7, .36, .1)); // glm::vec3(1, .56, .1)
+        character->scale = glm::vec3(.05);
+        character->position.y = 1.2f;
+
+        Mesh* skis = new Mesh("skis");
+        skis->LoadMesh(sourceModelsDir, "Ski.stl");
+        character->AddMesh(skis, transform3D::Translate(-6.1f, -18, 11) * transform3D::RotateOY(-M_PI_2));
+
+        Mesh* kratos = new Mesh("kratos");
+        kratos->LoadMesh(sourceModelsDir, "kratos.stl");
+        character->AddMesh(kratos, transform3D::Scale(.33f) * transform3D::RotateOX(M_PI_2));
+
+        complexObjects["character"] = character;
+    }
     //{
     //    Mesh* mesh = new Mesh("box");
     //    mesh->LoadMesh(PATH_JOIN(window->props.selfDir, RESOURCE_PATH::MODELS, "primitives"), "box.obj");
@@ -102,6 +119,8 @@ void Tema3::Update(float deltaTimeSeconds) {
     //    modelMatrix = glm::scale(modelMatrix, glm::vec3(2));
     //    RenderSimpleMesh(meshes["sphere"], shaders["LabShader"], modelMatrix, mapTextures["earth"], mapTextures["grass"]);
     //}
+    RenderComplex("character", deltaTimeSeconds);
+    DrawCoordinateSystem();
 }
 
 
@@ -109,11 +128,9 @@ void Tema3::FrameEnd() {
 }
 
 
-void Tema3::RenderSimpleMesh(Mesh *mesh, Shader *shader, const glm::mat4 & modelMatrix, Texture2D* texture)
+void Tema3::RenderTexturedMesh(Mesh *mesh, Texture2D* texture, const glm::mat4& modelMatrix)
 {
-    if (!mesh || !shader || !shader->GetProgramID())
-        return;
-
+    const auto shader = shaders["default"];
     // Render an object using the specified shader and the specified position
     glUseProgram(shader->program);
 
@@ -131,22 +148,59 @@ void Tema3::RenderSimpleMesh(Mesh *mesh, Shader *shader, const glm::mat4 & model
     int loc_projection_matrix = glGetUniformLocation(shader->program, "Projection");
     glUniformMatrix4fv(loc_projection_matrix, 1, GL_FALSE, glm::value_ptr(projectionMatrix));
 
-    // TODO(student): Set any other shader uniforms that you need
-    if (texture)
-    {
-        // TODO(student): Do these:
-        // - activate texture location 1
-        // - bind the texture2 ID
-        // - send the uniform value
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, texture->GetTextureID());
-        glUniform1i(glGetUniformLocation(shader->program, "texture_2"), 1);
-    }
+    // Bind texture
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, texture->GetTextureID());
+    glUniform1i(glGetUniformLocation(shader->program, "texture"), 1);
+    glUniform1i(glGetUniformLocation(shader->program, "useTexture"), 1);
+    glUniform3fv(glGetUniformLocation(shader->program, "overrideColor"), 1, glm::value_ptr(glm::vec3(2, 2, 2)));
 
     // Draw the object
     glBindVertexArray(mesh->GetBuffers()->m_VAO);
     glDrawElements(mesh->GetDrawMode(), static_cast<int>(mesh->indices.size()), GL_UNSIGNED_INT, 0);
 }
+
+void Tema3::RenderColoredMesh(Mesh* mesh, const glm::mat4& modelMatrix, const glm::vec3& color) {
+    const auto shader = shaders["default"];
+    // Render an object using the specified shader and the specified position
+    glUseProgram(shader->program);
+
+    // Bind model matrix
+    GLint loc_model_matrix = glGetUniformLocation(shader->program, "Model");
+    glUniformMatrix4fv(loc_model_matrix, 1, GL_FALSE, glm::value_ptr(modelMatrix));
+
+    // Bind view matrix
+    glm::mat4 viewMatrix = GetSceneCamera()->GetViewMatrix();
+    int loc_view_matrix = glGetUniformLocation(shader->program, "View");
+    glUniformMatrix4fv(loc_view_matrix, 1, GL_FALSE, glm::value_ptr(viewMatrix));
+
+    // Bind projection matrix
+    glm::mat4 projectionMatrix = GetSceneCamera()->GetProjectionMatrix();
+    int loc_projection_matrix = glGetUniformLocation(shader->program, "Projection");
+    glUniformMatrix4fv(loc_projection_matrix, 1, GL_FALSE, glm::value_ptr(projectionMatrix));
+
+    glUniform1i(glGetUniformLocation(shader->program, "useTexture"), 0);
+    glUniform3fv(glGetUniformLocation(shader->program, "overrideColor"), 1, glm::value_ptr(color));
+
+    // Draw the object
+    glBindVertexArray(mesh->GetBuffers()->m_VAO);
+    glDrawElements(mesh->GetDrawMode(), static_cast<int>(mesh->indices.size()), GL_UNSIGNED_INT, 0);
+}
+
+void Tema3::RenderComplex(std::string name, float deltaTime, const glm::mat4 finalTransform) {
+    Complex* c = complexObjects[name];
+    c->Update(deltaTime);
+    if (!c->visible) return;
+
+    auto parentMatrix = c->GetModelMatrix();
+    for (auto& mesh : c->meshes) {
+        if (!mesh.second.visible) continue;
+        auto matrix = finalTransform * parentMatrix * mesh.second.modelMatrix;
+        if (mesh.second.texture != NULL) RenderTexturedMesh(meshes[mesh.first], mesh.second.texture, matrix);
+        else RenderColoredMesh(meshes[mesh.first], matrix, c->overrideColor);
+    }
+}
+
 
 void Tema3::OnInputUpdate(float deltaTime, int mods) {
 }
