@@ -28,6 +28,7 @@ namespace m1
 
         void RenderGround();
         void RenderTexturedMesh(Mesh *mesh, Texture2D *texture, const glm::mat4 &modelMatrix = glm::mat4(1));
+        void RenderMeshOwnTexture(Mesh* mesh, const glm::mat4& modelMatrix = glm::mat4(1));
         void RenderColoredMesh(Mesh* mesh, const glm::mat4& modelMatrix = glm::mat4(1), const glm::vec3& color = glm::vec3(2, 2, 2));
         void RenderComplex(std::string name, float deltaTime, const glm::mat4 finalTransform = glm::mat4(1));
 

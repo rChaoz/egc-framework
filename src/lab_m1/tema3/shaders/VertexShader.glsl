@@ -13,11 +13,11 @@ uniform mat4 Projection;
 uniform vec3 overrideColor;
 
 // Output
-out vec2 texcoord;
+out vec2 tex_coord;
 out vec3 obj_color;
 
 void main() {
-    texcoord = v_texture_coord;
+    tex_coord = v_texture_coord;
     if (overrideColor.x > 1 || overrideColor.y > 1 || overrideColor.z > 1) obj_color = v_color;
     else obj_color = overrideColor;
     gl_Position = Projection * View * Model * vec4(v_position, 1.0);

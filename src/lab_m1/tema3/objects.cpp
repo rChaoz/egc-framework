@@ -43,3 +43,26 @@ void Complex::AddMesh(std::string id, glm::mat4 modelMatrix, Texture2D* texture,
 }
 
 void Complex::Update(float deltaTime) {}
+
+// OBSTACLE
+Obstacle::Obstacle(std::unordered_map<std::string, Mesh*>& worldMeshMap, glm::vec2* speed, bool rotate, glm::vec3& overrideColor)
+    : Complex(worldMeshMap, overrideColor), speed(speed), rotate(rotate) {
+    ownSpeed = glm::vec2(0);
+}
+
+void Obstacle::Update(float deltaTime) {
+    return;
+    glm::vec2 delta = deltaTime * (ownSpeed + *speed);
+    position.x -= delta.x;
+    position.z -= delta.y;
+    if (rotate) angle.z -= deltaTime * (ownSpeed.y + speed->y);
+}
+
+Obstacle* Obstacle::New(glm::vec2& initialPosition) {
+    auto *o = new Obstacle(worldMeshMap, speed, rotate, overrideColor);
+    o->ownSpeed = ownSpeed;
+    o->position = glm::vec3(initialPosition.x, position.y, initialPosition.y);
+    o->angle = angle;
+    o->scale = scale;
+    return o;
+}

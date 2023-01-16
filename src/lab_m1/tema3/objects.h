@@ -19,8 +19,9 @@ namespace tema3 {
     };
 
     class Complex {
-    private:
+    protected:
         std::unordered_map<std::string, Mesh*>& const worldMeshMap;
+
     public:
         std::unordered_map<std::string, ComplexMesh> meshes;
 
@@ -34,6 +35,19 @@ namespace tema3 {
         virtual void AddMesh(std::string id, glm::mat4 modelMatrix = glm::mat4(1), Texture2D* texture = NULL, bool visible = true);
         virtual void AddMesh(Mesh* mesh, glm::mat4 modelMatrix = glm::mat4(1), Texture2D* texture = NULL, bool visible = true);
         virtual void Update(float deltaTime);
+    };
+
+    class Obstacle : public Complex {
+    private:
+        glm::vec2* speed;
+        bool rotate;
+    public:
+        glm::vec2 ownSpeed;
+
+        Obstacle(std::unordered_map<std::string, Mesh*>& worldMeshMap, glm::vec2* speed, bool rotate = false, glm::vec3& overrideColor = glm::vec3(2, 2, 2));
+
+        void Update(float deltaTime) override;
+        virtual Obstacle* New(glm::vec2 &initialPosition);
     };
     
 }
