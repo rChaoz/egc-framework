@@ -9,7 +9,8 @@ using namespace tema3;
 ComplexMesh::ComplexMesh(glm::mat4 modelMatrix, Texture2D *texture, bool visible) : modelMatrix(modelMatrix), visible(visible), texture(texture) {}
 
 // COMPLEX
-Complex::Complex(std::unordered_map<std::string, Mesh*>& worldMeshMap, glm::vec3& overrideColor) : worldMeshMap(worldMeshMap), overrideColor(overrideColor) {
+Complex::Complex(std::unordered_map<std::string, Mesh*>& worldMeshMap, glm::vec3& overrideColor)
+    : worldMeshMap(worldMeshMap), overrideColor(overrideColor), radius(0), deleteMeshes(true) {
     visible = true;
     position = glm::vec3(0, 0, 0);
     angle = glm::vec3(0, 0, 0);
@@ -17,6 +18,7 @@ Complex::Complex(std::unordered_map<std::string, Mesh*>& worldMeshMap, glm::vec3
 }
 
 Complex::~Complex() {
+    if (!deleteMeshes) return;
     for (auto mesh : meshes) {
         auto m = worldMeshMap[mesh.first];
         if (m) {
@@ -30,6 +32,11 @@ glm::mat4 Complex::GetModelMatrix() {
     return transform3D::Translate(position.x, position.y, position.z)
         * transform3D::Rotate(angle.x, angle.y, angle.z)
         * transform3D::Scale(scale.x, scale.y, scale.z);
+}
+
+bool Complex::Touches(const Complex* another) {
+    const float distance = glm::length(position - another->position);
+    return distance < radius + another->radius;
 }
 
 void Complex::AddMesh(Mesh* mesh, glm::mat4 modelMatrix, Texture2D* texture, bool visible) {
@@ -51,7 +58,6 @@ Obstacle::Obstacle(std::unordered_map<std::string, Mesh*>& worldMeshMap, glm::ve
 }
 
 void Obstacle::Update(float deltaTime) {
-    return;
     glm::vec2 delta = deltaTime * (ownSpeed + *speed);
     position.x -= delta.x;
     position.z -= delta.y;
@@ -60,6 +66,8 @@ void Obstacle::Update(float deltaTime) {
 
 Obstacle* Obstacle::New(glm::vec2& initialPosition) {
     auto *o = new Obstacle(worldMeshMap, speed, rotate, overrideColor);
+    o->deleteMeshes = false;
+    o->meshes = meshes;
     o->ownSpeed = ownSpeed;
     o->position = glm::vec3(initialPosition.x, position.y, initialPosition.y);
     o->angle = angle;

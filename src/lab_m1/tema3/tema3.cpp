@@ -23,7 +23,7 @@ void Tema3::Init()
 {
     // Setup camera
     //GetCameraInput()->SetActive(false);
-    GetSceneCamera()->SetPosition(glm::vec3(0, 10, 15));
+    GetSceneCamera()->SetPosition(glm::vec3(0, 12, 22));
     GetSceneCamera()->RotateOX(-300);
     GetSceneCamera()->Update();
     
@@ -58,11 +58,12 @@ void Tema3::Init()
     {
         // Oildrum
         Obstacle* oildrum = new Obstacle(meshes, &speedV, true);
+        oildrum->position.y = .25f;
         oildrum->ownSpeed.y = 5;
 
         Mesh* mesh = new Mesh("oildrum");
         mesh->LoadMesh(PATH_JOIN(RESOURCE_PATH::MODELS, "props"), "oildrum.obj");
-        oildrum->AddMesh(mesh, transform3D::Translate(-.5f, .25f, 0) * transform3D::RotateOX(-M_PI_2));
+        oildrum->AddMesh(mesh, transform3D::Translate(-.5f, 0, 0) * transform3D::RotateOX(-M_PI_2));
 
         complexObjects["oildrum"] = oildrum;
     }
@@ -72,7 +73,7 @@ void Tema3::Init()
 
         Mesh* mesh = new Mesh("tree");
         mesh->LoadMesh(sourceModelsDir, "RenderCrate-Dead_Tree_1.obj");
-        tree->AddMesh(mesh, transform3D::Scale(.1f));
+        tree->AddMesh(mesh, transform3D::Scale(.07f));
 
         complexObjects["tree"] = tree;
     }
@@ -170,9 +171,43 @@ void Tema3::Update(float deltaTimeSeconds) {
     player->angle.y = angle;
     speedV.x = -sinf(angle) * speed;
     speedV.y = cosf(angle) * speed;
+    // Obstacle spawning
+    if (rand() % 1000 < SPAWN_CHANCE * speed) {
+        Obstacle* obstacle = NULL;
+        switch (rand() % 3) {
+        case 0: // Oildrum
+            obstacle = static_cast<Obstacle*>(complexObjects["oildrum"])->New(glm::vec2(rand() % 60 - 30, 25));
+            break;
+        case 1:
+            obstacle = static_cast<Obstacle*>(complexObjects["tree"])->New(glm::vec2(rand() % 60 - 30, 25));
+            break;
+        case 2:
+            obstacle = static_cast<Obstacle*>(complexObjects["lightpost"])->New(glm::vec2(rand() % 60 - 30, 25));
+            break;
+        }
+        for (auto other : obstacles) {
+            if (glm::length(other->position - obstacle->position) < 50 / speed) {
+                delete obstacle;
+                obstacle = NULL;
+                break;
+            }
+        }
+        if (obstacle != NULL) obstacles.push_back(obstacle);
+    }
+    // Remove obstacles gone too far
+    auto it = obstacles.begin();
+    while (it != obstacles.end()) {
+        if ((*it)->position.z < -25) it = obstacles.erase(it);
+        ++it;
+    }
 
-    // Update position
+    // Update position * speed
     position += deltaTimeSeconds * speedV;
+    speed += ACCELERATION;
+    speedV *= (speed) / (speed - ACCELERATION);
+
+
+    // Collision check
 
     // RENDERING
     
@@ -188,9 +223,7 @@ void Tema3::Update(float deltaTimeSeconds) {
     RenderGround();
     RenderComplex("player", deltaTimeSeconds);
     // Render obstacles
-    RenderComplex("oildrum", deltaTimeSeconds);
-    RenderComplex("lightpost", deltaTimeSeconds);
-    RenderComplex("tree", deltaTimeSeconds);
+    for (auto obstacle : obstacles) RenderComplex(obstacle, deltaTimeSeconds);
 }
 
 
@@ -317,7 +350,10 @@ void Tema3::RenderColoredMesh(Mesh* mesh, const glm::mat4& modelMatrix, const gl
 }
 
 void Tema3::RenderComplex(std::string name, float deltaTime, const glm::mat4 finalTransform) {
-    Complex* c = complexObjects[name];
+    RenderComplex(complexObjects[name], deltaTime, finalTransform);
+}
+
+void Tema3::RenderComplex(Complex* c, float deltaTime, const glm::mat4 finalTransform) {
     c->Update(deltaTime);
     if (!c->visible) return;
 
