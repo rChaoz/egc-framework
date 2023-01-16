@@ -47,7 +47,9 @@ namespace m1
 
         std::unordered_map<std::string, Texture2D *> mapTextures;
         std::unordered_map<std::string, tema3::Complex*> complexObjects;
-        std::list<tema3::Complex*> obstacles;
+        std::list<tema3::Obstacle*> obstacles;
+
+        float cameraShake;
 
         glm::vec2 position;
         glm::vec2 speedV;

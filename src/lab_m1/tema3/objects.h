@@ -46,11 +46,13 @@ namespace tema3 {
         bool rotate;
     public:
         glm::vec2 ownSpeed;
+        bool falling;
 
         Obstacle(std::unordered_map<std::string, Mesh*>& worldMeshMap, glm::vec2* speed, bool rotate = false, glm::vec3& overrideColor = glm::vec3(2, 2, 2));
 
         void Update(float deltaTime) override;
         virtual Obstacle* New(glm::vec2 &initialPosition);
+        bool Touches(const Complex* other) override;
     };
     
 }

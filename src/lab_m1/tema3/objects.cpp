@@ -53,7 +53,7 @@ void Complex::Update(float deltaTime) {}
 
 // OBSTACLE
 Obstacle::Obstacle(std::unordered_map<std::string, Mesh*>& worldMeshMap, glm::vec2* speed, bool rotate, glm::vec3& overrideColor)
-    : Complex(worldMeshMap, overrideColor), speed(speed), rotate(rotate) {
+    : Complex(worldMeshMap, overrideColor), speed(speed), rotate(rotate), falling(false) {
     ownSpeed = glm::vec2(0);
 }
 
@@ -61,7 +61,10 @@ void Obstacle::Update(float deltaTime) {
     glm::vec2 delta = deltaTime * (ownSpeed + *speed);
     position.x -= delta.x;
     position.z -= delta.y;
-    if (rotate) angle.z -= deltaTime * (ownSpeed.y + speed->y);
+    if (falling) {
+        position.y -= deltaTime * 5;
+        angle.x += deltaTime * 2;
+    } else if (rotate) angle.z -= deltaTime * (ownSpeed.y + speed->y);
 }
 
 Obstacle* Obstacle::New(glm::vec2& initialPosition) {
@@ -69,8 +72,14 @@ Obstacle* Obstacle::New(glm::vec2& initialPosition) {
     o->deleteMeshes = false;
     o->meshes = meshes;
     o->ownSpeed = ownSpeed;
+    o->radius = radius;
     o->position = glm::vec3(initialPosition.x, position.y, initialPosition.y);
     o->angle = angle;
     o->scale = scale;
     return o;
+}
+
+bool Obstacle::Touches(const Complex* other) {
+    if (falling) return false;
+    else return Complex::Touches(other);
 }

@@ -13,6 +13,7 @@ Tema3::Tema3() {
     mouseX = 0;
     position.x = position.y = speedV.x = 0;
     speedV.y = speed = 6;
+    cameraShake = 1;
 }
 
 
@@ -41,16 +42,17 @@ void Tema3::Init()
     {
         // Player
         Complex* player = new Complex(meshes, glm::vec3(.7, .36, .1)); // glm::vec3(1, .56, .1)
+        player->radius = .7f;
         player->scale = glm::vec3(.05);
-        player->position.y = 1.2f;
+        player->position.y = .2f;
 
         Mesh* skis = new Mesh("skis");
         skis->LoadMesh(sourceModelsDir, "Ski.stl");
-        player->AddMesh(skis, transform3D::Translate(-6.1f, -18, 11) * transform3D::RotateOY(-M_PI_2));
+        player->AddMesh(skis, transform3D::Translate(-6.1f, 2, 11) * transform3D::RotateOY(-M_PI_2));
 
         Mesh* kratos = new Mesh("kratos");
         kratos->LoadMesh(sourceModelsDir, "kratos.stl");
-        player->AddMesh(kratos, transform3D::Scale(.33f) * transform3D::RotateOX(M_PI_2));
+        player->AddMesh(kratos, transform3D::Translate(0, 20, 0) * transform3D::Scale(.33f) * transform3D::RotateOX(M_PI_2));
 
         complexObjects["player"] = player;
     }
@@ -58,6 +60,7 @@ void Tema3::Init()
     {
         // Oildrum
         Obstacle* oildrum = new Obstacle(meshes, &speedV, true);
+        oildrum->radius = 1;
         oildrum->position.y = .25f;
         oildrum->ownSpeed.y = 5;
 
@@ -70,6 +73,7 @@ void Tema3::Init()
     {
         // Tree
         Obstacle* tree = new Obstacle(meshes, &speedV);
+        tree->radius = .8f;
 
         Mesh* mesh = new Mesh("tree");
         mesh->LoadMesh(sourceModelsDir, "RenderCrate-Dead_Tree_1.obj");
@@ -80,6 +84,7 @@ void Tema3::Init()
     {
         // Lightpost
         Obstacle* lightpost = new Obstacle(meshes, &speedV, false, glm::vec3(.3f, .3f, .35f));
+        lightpost->radius = .5f;
 
         Mesh* mesh = new Mesh("lightpost");
         mesh->LoadMesh(sourceModelsDir, "Lightpost.stl");
@@ -186,7 +191,7 @@ void Tema3::Update(float deltaTimeSeconds) {
             break;
         }
         for (auto other : obstacles) {
-            if (glm::length(other->position - obstacle->position) < 50 / speed) {
+            if (glm::length(other->position - obstacle->position) < max(50 / speed, 5.f)) {
                 delete obstacle;
                 obstacle = NULL;
                 break;
@@ -206,8 +211,22 @@ void Tema3::Update(float deltaTimeSeconds) {
     speed += ACCELERATION;
     speedV *= (speed) / (speed - ACCELERATION);
 
-
     // Collision check
+    for (auto obstacle : obstacles) if (obstacle->Touches(player)) {
+        obstacle->falling = true;
+        const float newSpeed = max(3.f, speed / 2);
+        speedV *= newSpeed / speed;
+        speed = newSpeed;
+        if (cameraShake > .5f) cameraShake = 0;
+    }
+
+    // Camera shake
+    if (cameraShake < .5f) {
+        cameraShake += deltaTimeSeconds;
+        if (cameraShake >= .5f) GetSceneCamera()->SetPosition(glm::vec3(0, 12, 22));
+        else GetSceneCamera()->SetPosition(glm::vec3(sinf(cameraShake * 50) / 6, 12, 22));
+        GetSceneCamera()->Update();
+    }
 
     // RENDERING
     
