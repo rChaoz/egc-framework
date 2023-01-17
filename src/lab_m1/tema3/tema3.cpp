@@ -40,6 +40,10 @@ void Tema3::Init()
     camera2D->SetPosition(glm::vec3(0, 0, 50));
     camera2D->SetRotation(glm::vec3(0, 0, 0));
     camera2D->Update();
+
+    // Setup text renderer
+    textRenderer = new gfxc::TextRenderer(window->props.selfDir, 0, 0);
+    textRenderer->Load(PATH_JOIN(window->props.selfDir, SOURCE_PATH::M1, "tema3", "fonts", "FontdinerSwanky.ttf"), 48);
     
     const string sourceTextureDir = PATH_JOIN(window->props.selfDir, SOURCE_PATH::M1, "tema3", "textures");
     const string sourceModelsDir = PATH_JOIN(window->props.selfDir, SOURCE_PATH::M1, "tema3", "models");
@@ -192,6 +196,10 @@ void Tema3::FrameStart()
     const auto res = Engine::GetWindow()->GetResolution();
     SCREEN_H = SCREEN_W * res.y / res.x;
     camera2D->SetOrthographic(0, SCREEN_W, 0, SCREEN_H, 0.01f, 400);
+
+    textRenderer->m_textShader->Use();
+    glUniformMatrix4fv(glGetUniformLocation(textRenderer->m_textShader->program, "projection"), 1, GL_FALSE,
+        glm::value_ptr(transform3D::Scale(1, -1, 1) * camera2D->GetProjectionMatrix() * camera2D->GetViewMatrix()));
 }
 
 
@@ -275,7 +283,7 @@ void Tema3::Update(float deltaTimeSeconds) {
         const auto player = complexObjects["player"];
         player->angle.z = M_PI_2;
         player->angle.x = -M_PI_4 / 2;
-        player->position.y = .5f;
+        player->position.y = .35f;
         status = 2;
     }
 
@@ -293,6 +301,19 @@ void Tema3::Update(float deltaTimeSeconds) {
     for (int i = 0; i < hp; ++i) {
         Render2D(meshes["heart"], transform2D::Translate(SCREEN_W - 130 + i * 50, SCREEN_H - 25));
     }
+
+    // Render score, coins & game over screen
+    textRenderer->RenderText("Score: " + std::to_string(static_cast<int>(position.y)) + " m", 12, 12, .5f, glm::vec3(0));
+    textRenderer->RenderText("Coins: " + std::to_string(coins), 12, 42, .5f, glm::vec3(0));
+    if (status == 2) textRenderer->RenderText("Game Over!", SCREEN_W / 2 - 176, SCREEN_H / 2 - 46, 1.2f, glm::vec3(0));
+
+    glClear(GL_DEPTH_BUFFER_BIT); // to avoid text overlapping itself (same Z index)
+
+    // Render text after text shadow
+    textRenderer->RenderText("Score: " + std::to_string(static_cast<int>(position.y)) + " m", 10, 10, .5f, glm::vec3(.9f, .2f, .3f));
+    textRenderer->RenderText("Coins: " + std::to_string(coins), 10, 40, .5f, glm::vec3(1, .85f, .21f));
+    if (status == 2)  textRenderer->RenderText("Game Over!", SCREEN_W / 2 - 180, SCREEN_H / 2 - 50, 1.2f, glm::vec3(1.f, .8f, .8f));
+
 }
 
 

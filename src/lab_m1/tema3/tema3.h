@@ -8,6 +8,7 @@
 #include "objects.h"
 #include "lab_m1/lab4/transform3D.h"
 #include "lab_m1/lab3/transform2D.h"
+#include "components/text_renderer.h"
 
 
 namespace m1
@@ -49,6 +50,7 @@ namespace m1
 
         gfxc::Camera* camera2D;
         int SCREEN_W, SCREEN_H;
+        gfxc::TextRenderer *textRenderer;
 
         std::unordered_map<std::string, Texture2D *> mapTextures;
         std::unordered_map<std::string, tema3::Complex*> complexObjects;
