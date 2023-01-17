@@ -15,9 +15,14 @@ uniform vec3 overrideColor;
 // Output
 out vec2 tex_coord;
 out vec3 obj_color;
+out vec3 world_position;
+out vec3 world_normal;
 
 void main() {
     tex_coord = v_texture_coord;
+    world_position = v_position;
+    world_normal = v_normal;
+
     if (overrideColor.x > 1 || overrideColor.y > 1 || overrideColor.z > 1) obj_color = v_color;
     else obj_color = overrideColor;
     gl_Position = Projection * View * Model * vec4(v_position, 1.0);

@@ -43,15 +43,16 @@ namespace tema3 {
     class Obstacle : public Complex {
     private:
         glm::vec2* speed;
-        bool rotate;
     public:
-        glm::vec2 ownSpeed;
+        static constexpr float BARREL_SPEED = 5.f;
+        static const int BARREL = 0, LIGHTPOST = 1, TREE = 2;
+
+        const int type;
         bool falling;
 
-        Obstacle(std::unordered_map<std::string, Mesh*>& worldMeshMap, glm::vec2* speed, bool rotate = false, glm::vec3& overrideColor = glm::vec3(2, 2, 2));
+        Obstacle(std::unordered_map<std::string, Mesh*>& worldMeshMap, glm::vec2* speed, const int type);
 
         void Update(float deltaTime) override;
-        virtual Obstacle* New(glm::vec2 &initialPosition);
         bool Touches(const Complex* other) override;
     };
     

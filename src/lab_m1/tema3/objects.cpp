@@ -52,31 +52,39 @@ void Complex::AddMesh(std::string id, glm::mat4 modelMatrix, Texture2D* texture,
 void Complex::Update(float deltaTime) {}
 
 // OBSTACLE
-Obstacle::Obstacle(std::unordered_map<std::string, Mesh*>& worldMeshMap, glm::vec2* speed, bool rotate, glm::vec3& overrideColor)
-    : Complex(worldMeshMap, overrideColor), speed(speed), rotate(rotate), falling(false) {
-    ownSpeed = glm::vec2(0);
+Obstacle::Obstacle(std::unordered_map<std::string, Mesh*>& worldMeshMap, glm::vec2* speed, const int type)
+    : Complex(worldMeshMap), speed(speed), falling(false), type(type) {
+    deleteMeshes = false;
+    switch (type) {
+    case BARREL:
+        radius = .5f;
+        position.y = .25f;
+        AddMesh(worldMeshMap["oildrum"], transform3D::Translate(-.5f, 0, 0) * transform3D::RotateOX(-M_PI_2));
+        break;
+    case TREE:
+        radius = .4f;
+        AddMesh(worldMeshMap["tree"], transform3D::Scale(.07f));
+        break;
+    case LIGHTPOST:
+        overrideColor = glm::vec3(.3f, .3f, .35f);
+        radius = .3f;
+        AddMesh(worldMeshMap["lightpost"], transform3D::Translate(-1.6f, 0, 0) * transform3D::RotateOZ(-M_PI_2) * transform3D::Scale(.04f));
+        break;
+    }
 }
 
 void Obstacle::Update(float deltaTime) {
-    glm::vec2 delta = deltaTime * (ownSpeed + *speed);
+    glm::vec2 delta = deltaTime * *speed;
+    if (type == BARREL) {
+        delta.y += deltaTime * BARREL_SPEED;
+        angle.z -= delta.y;
+    }
     position.x -= delta.x;
     position.z -= delta.y;
     if (falling) {
         position.y -= deltaTime * 5;
         angle.x += deltaTime * 2;
-    } else if (rotate) angle.z -= deltaTime * (ownSpeed.y + speed->y);
-}
-
-Obstacle* Obstacle::New(glm::vec2& initialPosition) {
-    auto *o = new Obstacle(worldMeshMap, speed, rotate, overrideColor);
-    o->deleteMeshes = false;
-    o->meshes = meshes;
-    o->ownSpeed = ownSpeed;
-    o->radius = radius;
-    o->position = glm::vec3(initialPosition.x, position.y, initialPosition.y);
-    o->angle = angle;
-    o->scale = scale;
-    return o;
+    }
 }
 
 bool Obstacle::Touches(const Complex* other) {
