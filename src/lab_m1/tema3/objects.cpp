@@ -72,7 +72,7 @@ Obstacle::Obstacle(std::unordered_map<std::string, Mesh*>& worldMeshMap, glm::ve
         break;
     case COIN:
         overrideColor = glm::vec3(1, .85, .21);
-        radius = .5f;
+        radius = .6f;
         AddMesh(worldMeshMap["coin"], transform3D::Translate(0, 1, 0) * transform3D::Scale(.8f) * transform3D::RotateOZ(M_PI_2));
         break;
     }

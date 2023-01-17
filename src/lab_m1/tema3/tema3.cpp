@@ -153,7 +153,7 @@ void Tema3::Update(float deltaTimeSeconds) {
     float oldAngle = player->angle.y, deltaAngle = targetAngle - oldAngle;
     // Calculate new angle
     float sign = deltaAngle < 0 ? -1 : deltaAngle > 0 ? 1 : 0;
-    float angle = oldAngle + sign * ROTATION_SPEED * deltaTimeSeconds;
+    float angle = oldAngle + sign * max(1.f + speed / 20.f, 1.5f) * deltaTimeSeconds;
     if ((sign > 0 && angle > targetAngle) || (sign < 0 && angle < targetAngle)) angle = targetAngle;
     // Set player rotation & movement
     player->angle.y = angle;
@@ -192,6 +192,7 @@ void Tema3::Update(float deltaTimeSeconds) {
         if (obstacle->type == Obstacle::COIN) {
             obstacle->position.z = -50; // will be removedd automatically
             ++coins;
+            continue;
         }
         obstacle->falling = true;
         const float newSpeed = max(3.f, speed / 2);

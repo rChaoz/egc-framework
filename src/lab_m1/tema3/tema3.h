@@ -42,7 +42,6 @@ namespace m1
         void OnMouseScroll(int mouseX, int mouseY, int offsetX, int offsetY) override;
         void OnWindowResize(int width, int height) override;
 
-        static constexpr float ROTATION_SPEED = 1.f;
         static constexpr float ACCELERATION = .003f;
         static constexpr int SPAWN_CHANCE = 5;
 

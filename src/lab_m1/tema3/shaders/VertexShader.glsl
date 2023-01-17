@@ -20,8 +20,8 @@ out vec3 world_normal;
 
 void main() {
     tex_coord = v_texture_coord;
-    world_position = v_position;
-    world_normal = v_normal;
+    world_position = (Model * vec4(v_position, 0)).xyz;
+    world_normal = normalize((Model * vec4(v_normal, 0)).xyz);
 
     if (overrideColor.x > 1 || overrideColor.y > 1 || overrideColor.z > 1) obj_color = v_color;
     else obj_color = overrideColor;

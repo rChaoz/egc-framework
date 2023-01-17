@@ -36,13 +36,13 @@ void main() {
     //return;
 
     // LIGHTING
-    float ambient = .1f, diffuse = 0, specular = 0;
+    float ambient = .2f, diffuse = 0, specular = 0;
     vec3 N = normalize(world_normal);
     vec3 V = normalize(eye_position - world_position);
 
     // Directional light (sun)
     vec3 H = normalize(vec3(.5f, 1, 1) + V);
-    diffuse += .8f * max(dot(N, normalize(vec3(.3f, 1, 1))), 0);
+    diffuse += .6f * max(dot(N, normalize(vec3(.3f, 1, 1))), 0);
 
     // Lightposts
     for (int i = 0; i < spotlightCount; ++i) {
