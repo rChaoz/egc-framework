@@ -45,8 +45,8 @@ namespace m1
         void OnMouseScroll(int mouseX, int mouseY, int offsetX, int offsetY) override;
         void OnWindowResize(int width, int height) override;
 
-        static constexpr float ACCELERATION = .003f;
-        static constexpr int SPAWN_CHANCE = 5;
+        static constexpr float ACCELERATION = .0025f;
+        static constexpr int SPAWN_CHANCE = 7;
 
         gfxc::Camera* camera2D;
         int SCREEN_W, SCREEN_H;
@@ -56,7 +56,7 @@ namespace m1
         std::unordered_map<std::string, tema3::Complex*> complexObjects;
         std::list<tema3::Obstacle*> obstacles;
 
-        float cameraShake;
+        float cameraShake, jump;
         // Status:
         // 0 - playing
         // 1 - game over, animation

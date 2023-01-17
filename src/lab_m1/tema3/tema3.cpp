@@ -13,7 +13,7 @@ Tema3::Tema3() {
     mouseX = 0;
     position.x = position.y = speedV.x = 0;
     speedV.y = speed = 6;
-    cameraShake = 1;
+    cameraShake = jump = 1;
 
     status = score = coins = 0;
     hp = 3;
@@ -61,15 +61,14 @@ void Tema3::Init()
         Complex* player = new Complex(meshes, glm::vec3(.7, .36, .1)); // glm::vec3(1, .56, .1)
         player->radius = .7f;
         player->scale = glm::vec3(.05);
-        player->position.y = .2f;
 
         Mesh* skis = new Mesh("skis");
         skis->LoadMesh(sourceModelsDir, "Ski.stl");
-        player->AddMesh(skis, transform3D::Translate(-6.1f, 2, 11) * transform3D::RotateOY(-M_PI_2));
+        player->AddMesh(skis, transform3D::Translate(-6.1f, 6, 11) * transform3D::RotateOY(-M_PI_2));
 
         Mesh* kratos = new Mesh("kratos");
         kratos->LoadMesh(sourceModelsDir, "kratos.stl");
-        player->AddMesh(kratos, transform3D::Translate(0, 20, 0) * transform3D::Scale(.33f) * transform3D::RotateOX(M_PI_2));
+        player->AddMesh(kratos, transform3D::Translate(0, 25, 0) * transform3D::Scale(.33f) * transform3D::RotateOX(M_PI_2));
 
         complexObjects["player"] = player;
     }
@@ -206,10 +205,15 @@ void Tema3::FrameStart()
 void Tema3::Update(float deltaTimeSeconds) {
     // GAME LOGIC
     
+
     // Update position * speed
     if (status == 0) {
-        // Update based on mouse position
         const auto player = complexObjects["player"];
+        // Jump mechanic
+        jump += deltaTimeSeconds;
+        if (jump < .5f) player->position.y = sinf(jump * 2 * M_PI) * .8f;
+        else player->position.y = 0;
+        // Update based on mouse position
         const float w = window->GetResolution().x;
         float targetAngle = M_PI_4 - M_PI_2 * min(w, max(0.f, mouseX * 1.2f - w / 10)) / w;
         float oldAngle = player->angle.y, deltaAngle = targetAngle - oldAngle;
@@ -254,6 +258,7 @@ void Tema3::Update(float deltaTimeSeconds) {
                 ++coins;
                 continue;
             }
+            else if (obstacle->type == Obstacle::BARREL && jump < .5f) continue;
             obstacle->falling = true;
             speed = max(3.f, speed / 2);
             if (cameraShake > .5f) cameraShake = 0;
@@ -283,7 +288,7 @@ void Tema3::Update(float deltaTimeSeconds) {
         const auto player = complexObjects["player"];
         player->angle.z = M_PI_2;
         player->angle.x = -M_PI_4 / 2;
-        player->position.y = .35f;
+        player->position.y = .15f;
         status = 2;
     }
 
@@ -303,14 +308,14 @@ void Tema3::Update(float deltaTimeSeconds) {
     }
 
     // Render score, coins & game over screen
-    textRenderer->RenderText("Score: " + std::to_string(static_cast<int>(position.y)) + " m", 12, 12, .5f, glm::vec3(0));
+    textRenderer->RenderText("Score: " + std::to_string(static_cast<int>(position.y) + coins * 15), 12, 12, .5f, glm::vec3(0));
     textRenderer->RenderText("Coins: " + std::to_string(coins), 12, 42, .5f, glm::vec3(0));
     if (status == 2) textRenderer->RenderText("Game Over!", SCREEN_W / 2 - 176, SCREEN_H / 2 - 46, 1.2f, glm::vec3(0));
 
     glClear(GL_DEPTH_BUFFER_BIT); // to avoid text overlapping itself (same Z index)
 
     // Render text after text shadow
-    textRenderer->RenderText("Score: " + std::to_string(static_cast<int>(position.y)) + " m", 10, 10, .5f, glm::vec3(.9f, .2f, .3f));
+    textRenderer->RenderText("Score: " + std::to_string(static_cast<int>(position.y) + coins * 15), 10, 10, .5f, glm::vec3(.9f, .2f, .3f));
     textRenderer->RenderText("Coins: " + std::to_string(coins), 10, 40, .5f, glm::vec3(1, .85f, .21f));
     if (status == 2)  textRenderer->RenderText("Game Over!", SCREEN_W / 2 - 180, SCREEN_H / 2 - 50, 1.2f, glm::vec3(1.f, .8f, .8f));
 
@@ -477,14 +482,18 @@ void Tema3::OnMouseMove(int mouseX, int mouseY, int deltaX, int deltaY) {
 
 
 void Tema3::OnMouseBtnPress(int mouseX, int mouseY, int button, int mods) {
-    if (status == 2) {
+    if (status == 0 && jump > 1 && coins >= 3) {
+        coins -= 3;
+        jump = 0;
+    }
+    else if (status == 2) {
         // Restart game
         for (auto o : obstacles) delete o;
         obstacles.clear();
 
         const auto player = complexObjects["player"];
         player->angle = glm::vec3(0);
-        player->position.y = .2f;
+        player->position.y = 0;
         
         position.x = position.y = speedV.x = 0;
         speedV.y = speed = 6;
