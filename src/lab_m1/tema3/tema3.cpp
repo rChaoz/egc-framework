@@ -14,7 +14,14 @@ Tema3::Tema3() {
     position.x = position.y = speedV.x = 0;
     speedV.y = speed = 6;
     cameraShake = 1;
-    score = coins = 0;
+
+    status = score = coins = 0;
+    hp = 3;
+
+    // For 2D
+    camera2D = new gfxc::Camera();
+    SCREEN_W = 1000;
+    SCREEN_H = 515;
 }
 
 
@@ -28,6 +35,11 @@ void Tema3::Init()
     GetSceneCamera()->SetPosition(glm::vec3(0, 12, 22));
     GetSceneCamera()->RotateOX(-300);
     GetSceneCamera()->Update();
+
+    // Setup UI (2D) camera
+    camera2D->SetPosition(glm::vec3(0, 0, 50));
+    camera2D->SetRotation(glm::vec3(0, 0, 0));
+    camera2D->Update();
     
     const string sourceTextureDir = PATH_JOIN(window->props.selfDir, SOURCE_PATH::M1, "tema3", "textures");
     const string sourceModelsDir = PATH_JOIN(window->props.selfDir, SOURCE_PATH::M1, "tema3", "models");
@@ -61,19 +73,19 @@ void Tema3::Init()
     {
         Mesh* oildrum = new Mesh("oildrum");
         oildrum->LoadMesh(PATH_JOIN(RESOURCE_PATH::MODELS, "props"), "oildrum.obj");
-        meshes[oildrum->GetMeshID()] = oildrum;
+        AddMeshToList(oildrum);
 
         Mesh* tree = new Mesh("tree");
         tree->LoadMesh(sourceModelsDir, "RenderCrate-Dead_Tree_1.obj");
-        meshes[tree->GetMeshID()] = tree;
+        AddMeshToList(tree);
 
         Mesh* lightpost = new Mesh("lightpost");
         lightpost->LoadMesh(sourceModelsDir, "Lightpost.stl");
-        meshes[lightpost->GetMeshID()] = lightpost;
+        AddMeshToList(lightpost);
 
         Mesh* coin = new Mesh("coin");
         coin->LoadMesh(sourceModelsDir, "coin.obj");
-        meshes[coin->GetMeshID()] = coin;
+        AddMeshToList(coin);
     }
 
     // Create  ground
@@ -113,6 +125,42 @@ void Tema3::Init()
         meshes[mesh->GetMeshID()] = mesh;
     }
 
+    // 2D / UI Meshes
+    {
+        // Heart
+        glm::vec3 color(0.89f, 0.17f, 0.18f);
+        std::vector<VertexFormat> vertices = { VertexFormat(glm::vec3(0, 0, 5), color) };
+        std::vector<unsigned int> indices = { 0 };
+
+        // Center at 0,0
+        int vertexNum = 0;
+        // Bottom part
+        for (int i = -20; i <= 20; i += 2) {
+            float x = i;
+            float y = (acosf(1 - abs(x / 10)) - M_PI) * 9;
+            if (i == 0) y += 3;
+            vertices.push_back(VertexFormat(glm::vec3(x, y, 5), color));
+            indices.push_back(++vertexNum);
+        }
+        // Right-top part
+        for (int i = 0; i <= 10; i++) {
+            float x = cosf(M_PI * i / 10) * 10 + 10, y = sinf(M_PI * i / 10) * 10;
+            vertices.push_back(VertexFormat(glm::vec3(x, y, 5), color));
+            indices.push_back(++vertexNum);
+        }
+        // Left-top part
+        for (int i = 0; i <= 10; i++) {
+            float x = -cosf(M_PI * i / 10) * 10 - 10, y = sinf(M_PI * i / 10) * 10;
+            vertices.push_back(VertexFormat(glm::vec3(x, y, 5), color));
+            indices.push_back(++vertexNum);
+        }
+
+        Mesh* heart = new Mesh("heart");
+        heart->SetDrawMode(GL_TRIANGLE_FAN);
+        heart->InitFromData(vertices, indices);
+        AddMeshToList(heart);
+    }
+
     // Shaders
     {
         Shader *shader = new Shader("default");
@@ -140,65 +188,80 @@ void Tema3::FrameStart()
     glm::ivec2 resolution = window->GetResolution();
     // Sets the screen area where to draw
     glViewport(0, 0, resolution.x, resolution.y);
+    // For UI
+    const auto res = Engine::GetWindow()->GetResolution();
+    SCREEN_H = SCREEN_W * res.y / res.x;
+    camera2D->SetOrthographic(0, SCREEN_W, 0, SCREEN_H, 0.01f, 400);
 }
 
 
 void Tema3::Update(float deltaTimeSeconds) {
     // GAME LOGIC
     
-    // Update based on mouse position
-    const auto player = complexObjects["player"];
-    const float w = window->GetResolution().x;
-    float targetAngle = M_PI_4 - M_PI_2 * min(w, max(0.f, mouseX * 1.2f - w / 10)) / w;
-    float oldAngle = player->angle.y, deltaAngle = targetAngle - oldAngle;
-    // Calculate new angle
-    float sign = deltaAngle < 0 ? -1 : deltaAngle > 0 ? 1 : 0;
-    float angle = oldAngle + sign * max(1.f + speed / 20.f, 1.5f) * deltaTimeSeconds;
-    if ((sign > 0 && angle > targetAngle) || (sign < 0 && angle < targetAngle)) angle = targetAngle;
-    // Set player rotation & movement
-    player->angle.y = angle;
-    speedV.x = -sinf(angle) * speed;
-    speedV.y = cosf(angle) * speed;
-    // Obstacle spawning
-    if (rand() % 1000 < SPAWN_CHANCE * speed) {
-        Obstacle* obstacle = NULL;
-        glm::vec3 spawnPos(rand() % 60 - 30, 0, 25);
-        for (auto other : obstacles) {
-            if (glm::length(other->position - spawnPos) < max(50 / speed, 4.f)) {
-                spawnPos.y = -1;
+    // Update position * speed
+    if (status == 0) {
+        // Update based on mouse position
+        const auto player = complexObjects["player"];
+        const float w = window->GetResolution().x;
+        float targetAngle = M_PI_4 - M_PI_2 * min(w, max(0.f, mouseX * 1.2f - w / 10)) / w;
+        float oldAngle = player->angle.y, deltaAngle = targetAngle - oldAngle;
+        // Calculate new angle
+        float sign = deltaAngle < 0 ? -1 : deltaAngle > 0 ? 1 : 0;
+        float angle = oldAngle + sign * max(1.f + speed / 20.f, 1.5f) * deltaTimeSeconds;
+        if ((sign > 0 && angle > targetAngle) || (sign < 0 && angle < targetAngle)) angle = targetAngle;
+        // Set player rotation & movement
+        player->angle.y = angle;
+
+        // Obstacle spawning
+        if (rand() % 1000 < SPAWN_CHANCE * speed) {
+            Obstacle* obstacle = NULL;
+            glm::vec3 spawnPos(rand() % 60 - 30, 0, 25);
+            for (auto other : obstacles) {
+                if (glm::length(other->position - spawnPos) < max(50 / speed, 4.f)) {
+                    spawnPos.y = -1;
+                    break;
+                }
+            }
+            if (spawnPos.y == 0) {
+                Obstacle* obstacle = obstacle = new Obstacle(meshes, &speedV, rand() % 4);
+                obstacle->position += spawnPos; // dont use =, keep y value
+                obstacles.push_back(obstacle);
+            }
+        }
+
+        // Remove obstacles gone too far
+        auto it = obstacles.begin();
+        while (it != obstacles.end()) {
+            if ((*it)->position.z < -25) it = obstacles.erase(it);
+            else ++it;
+        }
+
+        position += deltaTimeSeconds * speedV;
+        speed += ACCELERATION;
+
+        // Collision check
+        for (auto obstacle : obstacles) if (obstacle->Touches(player)) {
+            if (obstacle->type == Obstacle::COIN) {
+                obstacle->position.z = -50; // will be removedd automatically
+                ++coins;
+                continue;
+            }
+            obstacle->falling = true;
+            speed = max(3.f, speed / 2);
+            if (cameraShake > .5f) cameraShake = 0;
+            if (--hp <= 0) {
+                status = 1;
+                cameraShake = 0;
+                speedV.x = speedV.y = 0;
                 break;
             }
         }
-        if (spawnPos.y == 0) {
-            Obstacle* obstacle = obstacle = new Obstacle(meshes, &speedV, rand() % 4);
-            obstacle->position += spawnPos; // dont use =, keep y value
-            obstacles.push_back(obstacle);
-        }
-    }
-    // Remove obstacles gone too far
-    auto it = obstacles.begin();
-    while (it != obstacles.end()) {
-        if ((*it)->position.z < -25) it = obstacles.erase(it);
-        else ++it;
-    }
 
-    // Update position * speed
-    position += deltaTimeSeconds * speedV;
-    speed += ACCELERATION;
-    speedV *= (speed) / (speed - ACCELERATION);
-
-    // Collision check
-    for (auto obstacle : obstacles) if (obstacle->Touches(player)) {
-        if (obstacle->type == Obstacle::COIN) {
-            obstacle->position.z = -50; // will be removedd automatically
-            ++coins;
-            continue;
+        if (status == 0) {
+            // Update speed vector
+            speedV.x = -sinf(angle) * speed;
+            speedV.y = cosf(angle) * speed;
         }
-        obstacle->falling = true;
-        const float newSpeed = max(3.f, speed / 2);
-        speedV *= newSpeed / speed;
-        speed = newSpeed;
-        if (cameraShake > .5f) cameraShake = 0;
     }
 
     // Camera shake
@@ -208,6 +271,13 @@ void Tema3::Update(float deltaTimeSeconds) {
         else GetSceneCamera()->SetPosition(glm::vec3(sinf(cameraShake * 50) / 6, 12, 22));
         GetSceneCamera()->Update();
     }
+    else if (status == 1) {
+        const auto player = complexObjects["player"];
+        player->angle.z = M_PI_2;
+        player->angle.x = -M_PI_4 / 2;
+        player->position.y = .5f;
+        status = 2;
+    }
 
     // RENDERING
 
@@ -216,6 +286,13 @@ void Tema3::Update(float deltaTimeSeconds) {
     RenderComplex("player", deltaTimeSeconds);
     // Render obstacles
     for (auto obstacle : obstacles) RenderComplex(obstacle, deltaTimeSeconds);
+
+    // UI
+
+    // Player health (hearts)
+    for (int i = 0; i < hp; ++i) {
+        Render2D(meshes["heart"], transform2D::Translate(SCREEN_W - 130 + i * 50, SCREEN_H - 25));
+    }
 }
 
 
@@ -281,22 +358,38 @@ void Tema3::RenderColoredMesh(Mesh* mesh, const glm::mat4& modelMatrix, const gl
     glDrawElements(mesh->GetDrawMode(), static_cast<int>(mesh->indices.size()), GL_UNSIGNED_INT, 0);
 }
 
-void Tema3::RenderComplex(std::string name, float deltaTime, const glm::mat4 finalTransform) {
-    RenderComplex(complexObjects[name], deltaTime, finalTransform);
+void Tema3::RenderComplex(std::string name, float deltaTime, const glm::mat4 modelMatrix) {
+    RenderComplex(complexObjects[name], deltaTime, modelMatrix);
 }
 
-void Tema3::RenderComplex(Complex* c, float deltaTime, const glm::mat4 finalTransform) {
+void Tema3::RenderComplex(Complex* c, float deltaTime, const glm::mat4 modelMatrix) {
     c->Update(deltaTime);
     if (!c->visible) return;
 
     auto parentMatrix = c->GetModelMatrix();
     for (auto& mesh : c->meshes) {
         if (!mesh.second.visible) continue;
-        auto matrix = finalTransform * parentMatrix * mesh.second.modelMatrix;
+        auto matrix = modelMatrix * parentMatrix * mesh.second.modelMatrix;
         if (mesh.second.texture != NULL) RenderTexturedMesh(meshes[mesh.first], mesh.second.texture, matrix);
         else if (c->overrideColor.x > 1 || c->overrideColor.y > 1 || c->overrideColor.z > 1) RenderMeshOwnTexture(meshes[mesh.first], matrix);
         else RenderColoredMesh(meshes[mesh.first], matrix, c->overrideColor);
     }
+}
+
+void Tema3::Render2D(Mesh* mesh, const glm::mat4 mm) {
+    const auto shader = shaders["VertexColor"];
+    shader->Use();
+    glUniformMatrix4fv(shader->loc_view_matrix, 1, GL_FALSE, glm::value_ptr(camera2D->GetViewMatrix()));
+    glUniformMatrix4fv(shader->loc_projection_matrix, 1, GL_FALSE, glm::value_ptr(camera2D->GetProjectionMatrix()));
+
+    glm::mat4 model = glm::mat4(
+        mm[0][0], mm[0][1], mm[0][2], 0.f,
+        mm[1][0], mm[1][1], mm[1][2], 0.f,
+        0.f, 0.f, mm[2][2], 0.f,
+        mm[2][0], mm[2][1], 0.f, 1.f);
+    glUniformMatrix4fv(shader->loc_model_matrix, 1, GL_FALSE, glm::value_ptr(model));
+
+    mesh->Render();
 }
 
 void Tema3::SendUniforms(Shader* shader, const glm::mat4& modelMatrix) {
@@ -353,6 +446,22 @@ void Tema3::OnMouseMove(int mouseX, int mouseY, int deltaX, int deltaY) {
 
 
 void Tema3::OnMouseBtnPress(int mouseX, int mouseY, int button, int mods) {
+    if (status == 2) {
+        // Restart game
+        for (auto o : obstacles) delete o;
+        obstacles.clear();
+
+        const auto player = complexObjects["player"];
+        player->angle = glm::vec3(0);
+        player->position.y = .2f;
+        
+        position.x = position.y = speedV.x = 0;
+        speedV.y = speed = 6;
+        cameraShake = 1;
+
+        status = score = coins = 0;
+        hp = 3;
+    }
 }
 
 

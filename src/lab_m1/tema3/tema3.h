@@ -7,6 +7,7 @@
 #include "components/transform.h"
 #include "objects.h"
 #include "lab_m1/lab4/transform3D.h"
+#include "lab_m1/lab3/transform2D.h"
 
 
 namespace m1
@@ -29,8 +30,9 @@ namespace m1
         void RenderTexturedMesh(Mesh *mesh, Texture2D *texture, const glm::mat4 &modelMatrix = glm::mat4(1));
         void RenderMeshOwnTexture(Mesh* mesh, const glm::mat4& modelMatrix = glm::mat4(1));
         void RenderColoredMesh(Mesh* mesh, const glm::mat4& modelMatrix = glm::mat4(1), const glm::vec3& color = glm::vec3(2, 2, 2));
-        void RenderComplex(std::string name, float deltaTime, const glm::mat4 finalTransform = glm::mat4(1));
-        void RenderComplex(tema3::Complex *c, float deltaTime, const glm::mat4 finalTransform = glm::mat4(1));
+        void RenderComplex(std::string name, float deltaTime, const glm::mat4 modelMatrix = glm::mat4(1));
+        void RenderComplex(tema3::Complex *c, float deltaTime, const glm::mat4 modelMatrix = glm::mat4(1));
+        void Render2D(Mesh* mesh, const glm::mat4 modelMatrix = glm::mat4(1));
         void SendUniforms(Shader* shader, const glm::mat4& modelMatrix);
 
         void OnInputUpdate(float deltaTime, int mods) override;
@@ -45,12 +47,19 @@ namespace m1
         static constexpr float ACCELERATION = .003f;
         static constexpr int SPAWN_CHANCE = 5;
 
+        gfxc::Camera* camera2D;
+        int SCREEN_W, SCREEN_H;
+
         std::unordered_map<std::string, Texture2D *> mapTextures;
         std::unordered_map<std::string, tema3::Complex*> complexObjects;
         std::list<tema3::Obstacle*> obstacles;
 
         float cameraShake;
-        int coins, score;
+        // Status:
+        // 0 - playing
+        // 1 - game over, animation
+        // 2 - score screen
+        int coins, score, hp, status;
 
         glm::vec2 position;
         glm::vec2 speedV;
