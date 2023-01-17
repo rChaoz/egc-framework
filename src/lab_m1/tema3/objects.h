@@ -43,9 +43,10 @@ namespace tema3 {
     class Obstacle : public Complex {
     private:
         glm::vec2* speed;
+        float timer;
     public:
         static constexpr float BARREL_SPEED = 5.f;
-        static const int BARREL = 0, LIGHTPOST = 1, TREE = 2;
+        static const int BARREL = 0, LIGHTPOST = 1, TREE = 2, COIN = 3;
 
         const int type;
         bool falling;

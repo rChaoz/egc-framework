@@ -51,6 +51,7 @@ namespace m1
         std::list<tema3::Obstacle*> obstacles;
 
         float cameraShake;
+        int coins, score;
 
         glm::vec2 position;
         glm::vec2 speedV;

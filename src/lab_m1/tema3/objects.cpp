@@ -53,7 +53,7 @@ void Complex::Update(float deltaTime) {}
 
 // OBSTACLE
 Obstacle::Obstacle(std::unordered_map<std::string, Mesh*>& worldMeshMap, glm::vec2* speed, const int type)
-    : Complex(worldMeshMap), speed(speed), falling(false), type(type) {
+    : Complex(worldMeshMap), speed(speed), falling(false), type(type), timer(0) {
     deleteMeshes = false;
     switch (type) {
     case BARREL:
@@ -70,14 +70,24 @@ Obstacle::Obstacle(std::unordered_map<std::string, Mesh*>& worldMeshMap, glm::ve
         radius = .3f;
         AddMesh(worldMeshMap["lightpost"], transform3D::Translate(-1.6f, 0, 0) * transform3D::RotateOZ(-M_PI_2) * transform3D::Scale(.04f));
         break;
+    case COIN:
+        overrideColor = glm::vec3(1, .85, .21);
+        radius = .5f;
+        AddMesh(worldMeshMap["coin"], transform3D::Translate(0, 1, 0) * transform3D::Scale(.8f) * transform3D::RotateOZ(M_PI_2));
+        break;
     }
 }
 
 void Obstacle::Update(float deltaTime) {
+    timer += deltaTime;
     glm::vec2 delta = deltaTime * *speed;
     if (type == BARREL) {
         delta.y += deltaTime * BARREL_SPEED;
         angle.z -= delta.y;
+    }
+    else if (type == COIN) {
+        angle.y += deltaTime * 4;
+        position.y = sinf(timer * 6) * .3f;
     }
     position.x -= delta.x;
     position.z -= delta.y;

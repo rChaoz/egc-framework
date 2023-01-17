@@ -14,6 +14,7 @@ Tema3::Tema3() {
     position.x = position.y = speedV.x = 0;
     speedV.y = speed = 6;
     cameraShake = 1;
+    score = coins = 0;
 }
 
 
@@ -69,6 +70,10 @@ void Tema3::Init()
         Mesh* lightpost = new Mesh("lightpost");
         lightpost->LoadMesh(sourceModelsDir, "Lightpost.stl");
         meshes[lightpost->GetMeshID()] = lightpost;
+
+        Mesh* coin = new Mesh("coin");
+        coin->LoadMesh(sourceModelsDir, "coin.obj");
+        meshes[coin->GetMeshID()] = coin;
     }
 
     // Create  ground
@@ -165,7 +170,7 @@ void Tema3::Update(float deltaTimeSeconds) {
             }
         }
         if (spawnPos.y == 0) {
-            Obstacle* obstacle = obstacle = new Obstacle(meshes, &speedV, rand() % 3);
+            Obstacle* obstacle = obstacle = new Obstacle(meshes, &speedV, rand() % 4);
             obstacle->position += spawnPos; // dont use =, keep y value
             obstacles.push_back(obstacle);
         }
@@ -184,7 +189,10 @@ void Tema3::Update(float deltaTimeSeconds) {
 
     // Collision check
     for (auto obstacle : obstacles) if (obstacle->Touches(player)) {
-        
+        if (obstacle->type == Obstacle::COIN) {
+            obstacle->position.z = -50; // will be removedd automatically
+            ++coins;
+        }
         obstacle->falling = true;
         const float newSpeed = max(3.f, speed / 2);
         speedV *= newSpeed / speed;
