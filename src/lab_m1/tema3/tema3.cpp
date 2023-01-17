@@ -432,15 +432,25 @@ void Tema3::SendUniforms(Shader* shader, const glm::mat4& modelMatrix) {
     glUniformMatrix4fv(loc_projection_matrix, 1, GL_FALSE, glm::value_ptr(projectionMatrix));
 
     // Lightposts
-    glm::vec3 spotlights[800];
-    int spotlightCount = 0;
+    glm::vec3 v[800];
+    int count = 0;
     for (auto o : obstacles) if (o->type == Obstacle::LIGHTPOST && !o->falling) {
         const auto p = o->position;
-        spotlights[spotlightCount] = glm::vec3(p.x, p.y + 4, p.z + 1.5f);
-        ++spotlightCount;
+        v[count] = glm::vec3(p.x, p.y + 4, p.z + 1.5f);
+        ++count;
     }
-    glUniform1i(glGetUniformLocation(shader->program, "spotlightCount"), spotlightCount);
-    glUniform3fv(glGetUniformLocation(shader->program, "spotlights"), spotlightCount, glm::value_ptr(spotlights[0]));
+    glUniform1i(glGetUniformLocation(shader->program, "spotlightCount"), count);
+    glUniform3fv(glGetUniformLocation(shader->program, "spotlights"), count, glm::value_ptr(v[0]));
+
+    // Coins
+    count = 0;
+    for (auto o : obstacles) if (o->type == Obstacle::COIN) {
+        const auto p = o->position;
+        v[count] = glm::vec3(p.x, p.y + 1, p.z);
+        ++count;
+    }
+    glUniform1i(glGetUniformLocation(shader->program, "coinCount"), count);
+    glUniform3fv(glGetUniformLocation(shader->program, "coinLights"), count, glm::value_ptr(v[0]));
 
     // Player lantern & camera
     const float angle = complexObjects["player"]->angle.y;
