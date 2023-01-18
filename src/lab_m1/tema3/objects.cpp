@@ -63,11 +63,13 @@ Obstacle::Obstacle(std::unordered_map<std::string, Mesh*>& worldMeshMap, glm::ve
         break;
     case TREE:
         radius = .4f;
+        angle.z = -M_PI_2 / 4;
         AddMesh(worldMeshMap["tree"], transform3D::Scale(.07f));
         break;
     case LIGHTPOST:
         overrideColor = glm::vec3(.3f, .3f, .35f);
         radius = .3f;
+        angle.z = -M_PI_2 / 4;
         AddMesh(worldMeshMap["lightpost"], transform3D::Translate(-1.6f, 0, 0) * transform3D::RotateOZ(-M_PI_2) * transform3D::Scale(.04f));
         break;
     case COIN:
@@ -82,7 +84,7 @@ void Obstacle::Update(float deltaTime) {
     timer += deltaTime;
     glm::vec2 delta = deltaTime * *speed;
     if (type == BARREL) {
-        delta.y += deltaTime * BARREL_SPEED;
+        delta.y = -delta.y;
         angle.z -= delta.y;
     }
     else if (type == COIN) {

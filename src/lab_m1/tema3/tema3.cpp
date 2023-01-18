@@ -31,7 +31,7 @@ Tema3::~Tema3() {
 void Tema3::Init()
 {
     // Setup camera
-    //GetCameraInput()->SetActive(false);
+    GetCameraInput()->SetActive(false);
     GetSceneCamera()->SetPosition(glm::vec3(0, 12, 22));
     GetSceneCamera()->RotateOX(-300);
     GetSceneCamera()->Update();
@@ -236,6 +236,7 @@ void Tema3::Update(float deltaTimeSeconds) {
             }
             if (spawnPos.y == 0) {
                 Obstacle* obstacle = obstacle = new Obstacle(meshes, &speedV, rand() % 4);
+                if (obstacle->type == Obstacle::BARREL) spawnPos.z = -25;
                 obstacle->position += spawnPos; // dont use =, keep y value
                 obstacles.push_back(obstacle);
             }
@@ -244,7 +245,7 @@ void Tema3::Update(float deltaTimeSeconds) {
         // Remove obstacles gone too far
         auto it = obstacles.begin();
         while (it != obstacles.end()) {
-            if ((*it)->position.z < -25) it = obstacles.erase(it);
+            if ((*it)->position.z < -25 || (*it)->position.z > 25) it = obstacles.erase(it);
             else ++it;
         }
 
