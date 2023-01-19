@@ -26,7 +26,7 @@ namespace m1
         void RenderColoredMesh(Mesh* mesh, const glm::mat4& modelMatrix = glm::mat4(1), const glm::vec3& color = glm::vec3(2, 2, 2));
         void RenderComplex(std::string name, float deltaTime, const glm::mat4 modelMatrix = glm::mat4(1));
         void RenderComplex(tema2::Complex* c, float deltaTime, const glm::mat4 modelMatrix = glm::mat4(1));
-        void SendUniforms(Shader* shader);
+        void SendUniforms();
 
         void OnInputUpdate(float deltaTime, int mods) override;
         void OnKeyPress(int key, int mods) override;
@@ -36,6 +36,8 @@ namespace m1
         void OnMouseBtnRelease(int mouseX, int mouseY, int button, int mods) override;
         void OnMouseScroll(int mouseX, int mouseY, int offsetX, int offsetY) override;
         void OnWindowResize(int width, int height) override;
+
+        static constexpr float TRACK_WIDTH = 5.f;
 
         std::unordered_map<std::string, Texture2D*> mapTextures;
         std::unordered_map<std::string, tema2::Complex*> complexObjects;

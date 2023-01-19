@@ -3,6 +3,7 @@
 #include <vector>
 #include <string>
 #include <iostream>
+#include <fstream>
 
 using namespace std;
 using namespace m1;
@@ -60,10 +61,107 @@ void Tema2::Init() {
 
         Mesh* mesh = new Mesh("ground");
         mesh->InitFromData(vertices, normals, textureCoords, indices);
-        meshes[mesh->GetMeshID()] = mesh;
+        AddMeshToList(mesh);
     }
 
-    // Create a shader program for drawing face polygon with the color of the normal
+    // Create track
+    {
+        // Load texture
+        Texture2D* texture = new Texture2D();
+        texture->Load2D(PATH_JOIN(sourceTextureDir, "track.jpg").c_str(), GL_REPEAT);
+        mapTextures["track"] = texture;
+
+        // Variables
+        vector<glm::vec2> vertices;
+        vector<unsigned int> indices;
+
+        // Read & process points file
+        ifstream points(PATH_JOIN(window->props.selfDir, SOURCE_PATH::M1, "tema2", "track.txt").c_str());
+        string p1, p2;
+        // Read first point
+        points >> p1 >> p2;
+        glm::vec2 from(stof(p1), stof(p2)), to, pFrom, pTo;
+        glm::vec2 start = from, pStart, first;
+        // 3 - FIRST
+        // 1 - LAST (connect last point to first)
+        // 0 - MISSING (connect missing edge)
+        int status = 3;
+
+        while (points >> p1 >> p2 || (status--)) {
+            to.x = stof(p1), to.y = stof(p2);
+            if (status == 3) {
+                --status;
+                // Just find perpendicular
+                pFrom = to - from;
+                pStart = pFrom = glm::normalize(glm::vec2(-pFrom.y, pFrom.x)) * (TRACK_WIDTH / 2);
+                first = from = to;
+                continue; // don't draw any lines
+            }
+            else if (status == 1) {
+                // Connect last point to the first
+                to = start;
+            }
+            else if (status == 0) {
+                // Connect missing line (not drawn for first point)
+                to = first;
+            }
+            // Find perpendicular
+            pTo = to - from;
+            pTo = glm::normalize(glm::vec2(-pTo.y, pTo.x)) * (TRACK_WIDTH / 2);
+
+            // Find point farthest from 'to' between ending points of last segment
+            glm::vec2 from1 = from + pFrom, from2 = from - pFrom;
+            if (glm::length(to - from1) > glm::length(to - from2)) {
+                // Closer to from1
+                from2 = from1 - pTo * 2.f;
+            }
+            else {
+                // Closer to from2
+                from1 = from2 + pTo * 2.f;
+            }
+            vertices.push_back(from1);
+            vertices.push_back(from2);
+            // Create line (rectangle) starting at 'from' ending at 'to'
+            int splits = glm::length(to - from) / .1f;
+            glm::vec2 to1 = to + pTo, to2 = to - pTo;
+            glm::vec2 dir1 = (to1 - from1) / static_cast<float>(splits);
+            glm::vec2 dir2 = (to2 - from2) / static_cast<float>(splits);
+
+            glm::vec2 p1 = from1, p2 = from2; // points 1 & 2
+            for (int i = 0; i < splits; ++i) {
+                glm::vec2 n1 = p1 + dir1, n2 = p2 + dir2; // next points 1 & 2
+                int offset = vertices.size();
+                vertices.push_back(n1); // offset     (offset - 2 for next point)
+                vertices.push_back(n2); // offset + 1 (offset - 1 for next point)
+
+                indices.push_back(offset - 2), indices.push_back(offset), indices.push_back(offset + 1);
+                indices.push_back(offset - 2), indices.push_back(offset + 1), indices.push_back(offset - 1);
+
+                p1 = n1, p2 = n2;
+            }
+
+            // Update vars that hold previous-point values
+            from = to;
+            pFrom = pTo;
+        }
+
+        // Create mesh
+        Mesh* mesh = new Mesh("track");
+        vector<glm::vec3> verts, normals;
+        vector<glm::vec2> textureCoords;
+        vector<VertexFormat> vf;
+        bool change = false;
+        for (auto v : vertices) {
+            verts.push_back(glm::vec3(v.x, .1f, v.y));
+            normals.push_back(glm::vec3(0, 1, 0));
+            textureCoords.push_back(v / 5.f);
+        }
+        //mesh->InitFromData(v, indices);
+        mesh->InitFromData(verts, normals, textureCoords, indices);
+        AddMeshToList(mesh);
+    }
+
+    // Load shaders
     {
         Shader* shader = new Shader("default");
         shader->AddShader(PATH_JOIN(sourceShaderDir, "VertexShader.glsl"), GL_VERTEX_SHADER);
@@ -87,8 +185,7 @@ void Tema2::FrameStart() {
 
 void Tema2::Update(float deltaTimeSeconds) {
     // RENDERING
-
-    SendUniforms(shaders["default"]);
+    SendUniforms();
     RenderGround();
 }
 
@@ -100,16 +197,20 @@ void Tema2::RenderGround() {
     const auto shader = shaders["default"];
     shader->Use();
     glUniformMatrix4fv(glGetUniformLocation(shader->program, "Model"), 1, GL_FALSE, glm::value_ptr(glm::mat4(1)));
-
-    // Bind texture
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, mapTextures["ground"]->GetTextureID());
-    glUniform1i(glGetUniformLocation(shader->program, "u_texture_0"), 0);
     glUniform1i(glGetUniformLocation(shader->program, "useTexture"), 1);
     glUniform3fv(glGetUniformLocation(shader->program, "overrideColor"), 1, glm::value_ptr(glm::vec3(2, 2, 2)));
 
-    // Draw the object
-    const auto* mesh = meshes["ground"];
+    // Render ground
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, mapTextures["ground"]->GetTextureID());
+    glUniform1i(glGetUniformLocation(shader->program, "u_texture_0"), 0);
+    auto mesh = meshes["ground"];
+    glBindVertexArray(mesh->GetBuffers()->m_VAO);
+    glDrawElements(mesh->GetDrawMode(), static_cast<int>(mesh->indices.size()), GL_UNSIGNED_INT, 0);
+
+    // And track
+    glBindTexture(GL_TEXTURE_2D, mapTextures["track"]->GetTextureID());
+    mesh = meshes["track"];
     glBindVertexArray(mesh->GetBuffers()->m_VAO);
     glDrawElements(mesh->GetDrawMode(), static_cast<int>(mesh->indices.size()), GL_UNSIGNED_INT, 0);
 }
@@ -175,8 +276,9 @@ void Tema2::RenderComplex(Complex* c, float deltaTime, const glm::mat4 modelMatr
     }
 }
 
-void Tema2::SendUniforms(Shader* shader) {
+void Tema2::SendUniforms() {
     // Apply shaders
+    const auto shader = shaders["default"];
     shader->Use();
 
     // Bind view matrix
