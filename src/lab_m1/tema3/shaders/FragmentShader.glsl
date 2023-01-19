@@ -8,7 +8,6 @@ in vec3 world_normal;
 
 // Texture uniforms
 uniform sampler2D u_texture_0;
-uniform int bothTextures;
 uniform int useTexture;
 
 // Lighting uniforms
