@@ -13,6 +13,7 @@ using namespace tema2;
 
 Tema2::Tema2() {
     speed = angularSpeed = 0;
+    redFlash = 1.f;
 }
 
 
@@ -125,11 +126,10 @@ void Tema2::Init() {
             // Create line (rectangle) starting at 'from' ending at 'to'
             int splits = glm::length(to - from) / .2f;
             glm::vec2 to1 = to + pTo, to2 = to - pTo;
-            glm::vec2 dir = (to - from) / static_cast<float>(splits / 10);
             glm::vec2 dir1 = (to1 - from1) / static_cast<float>(splits);
             glm::vec2 dir2 = (to2 - from2) / static_cast<float>(splits);
 
-            glm::vec2 p = from, p1 = from1, p2 = from2; // points 1 & 2
+            glm::vec2 p1 = from1, p2 = from2; // points 1 & 2
             for (int i = 0; i < splits; ++i) {
                 glm::vec2 n1 = p1 + dir1, n2 = p2 + dir2; // next points 1 & 2
                 if (i == splits - 1) n1 = to1, n2 = to2;
@@ -142,10 +142,9 @@ void Tema2::Init() {
 
                 p1 = n1, p2 = n2;
 
-                if (i % 10) {
+                if (i % 10 == 9 && i < splits - 9) {
                     // Remember track points
-                    p += dir;
-                    track.push_back(p);
+                    track.push_back((p1 + p2) / 2.f);
                 }
 
                 // Spawn trees (but not on top of each other)
@@ -176,7 +175,6 @@ void Tema2::Init() {
             normals.push_back(glm::vec3(0, 1, 0));
             textureCoords.push_back(v / 5.f);
         }
-        //mesh->InitFromData(v, indices);
         mesh->InitFromData(verts, normals, textureCoords, indices);
         AddMeshToList(mesh);
 
@@ -184,7 +182,7 @@ void Tema2::Init() {
         for (auto v : possibleTrees) {
             // Check it's not inside the track
             bool inside = false;
-            for (auto point : track) if (glm::length(v - point) < TRACK_WIDTH * .6f) {
+            for (auto point : track) if (glm::length(v - point) < TRACK_WIDTH * .7f) {
                 inside = true;
                 break;
             }
@@ -240,7 +238,24 @@ void Tema2::FrameStart() {
 void Tema2::Update(float deltaTimeSeconds) {
     // GAME LOGIC
     const auto car = complexObjects["car"];
-    car->position += car->Forward() * speed * deltaTimeSeconds;
+    
+    // Prevent the car from getting off the track
+    const auto newPos = car->position + car->Forward() * speed * deltaTimeSeconds;
+    bool inTrack = false;
+    for (auto point : track) if (glm::length(point - glm::vec2(newPos.x, newPos.z)) < TRACK_WIDTH * .6f) {
+        inTrack = true;
+        break;
+    }
+    if (inTrack) car->position = newPos;
+    else {
+        if (redFlash > 1) redFlash = 0;
+        speed = angularSpeed = 0; // stop the car
+    }
+
+    // Red flash
+    redFlash += deltaTimeSeconds;
+    if (redFlash < .5f) car->overrideColor = glm::vec3(.6f, .06f, .08f);
+    else car->overrideColor = glm::vec3(.6f, .26f, .08f);
     
     // Camera follows car
     camera->Set(car->position + glm::vec3(0, 4, 0) - car->Forward() * 5.f, car->position, glm::vec3(0, 1, 0));
@@ -261,8 +276,6 @@ void Tema2::Update(float deltaTimeSeconds) {
 
 void Tema2::Render(float deltaTimeSeconds) {
     RenderGround();
-    glUniform1i(glGetUniformLocation(shaders["default"]->program, "shinyness"), 2);
-    RenderComplex("car", deltaTimeSeconds);
     RenderComplex("tree", deltaTimeSeconds);
     auto c = complexObjects["tree"];
     for (auto tree : trees) {
@@ -271,6 +284,8 @@ void Tema2::Render(float deltaTimeSeconds) {
         c->angle.y = tree.second;
         RenderComplex("tree", deltaTimeSeconds);
     }
+    glUniform1i(glGetUniformLocation(shaders["default"]->program, "shinyness"), 3);
+    RenderComplex("car", deltaTimeSeconds);
 }
 
 
@@ -389,7 +404,7 @@ void Tema2::SendUniforms(int cam) {
 
 void Tema2::OnInputUpdate(float deltaTime, int mods) {
     if (deltaTime > 5 || deltaTime < 0) return;
-    if (window->KeyHold(GLFW_KEY_W)) speed += ACCELERATION * deltaTime;
+    if (window->KeyHold(GLFW_KEY_W)) speed += (speed >= 0 ? ACCELERATION : BREAK) * deltaTime;
     else if (window->KeyHold(GLFW_KEY_S)) {
         if (speed > 0) speed = max(speed - BREAK * deltaTime, 0.f);
         else speed -= ACCELERATION * deltaTime;
