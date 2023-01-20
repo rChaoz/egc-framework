@@ -42,4 +42,17 @@ namespace tema2 {
         virtual void Update(float deltaTime);
     };
     
+    struct Obstacle {
+        std::vector<glm::vec2> &track;
+
+        glm::vec3 color;
+        glm::vec2 dir;
+        int point;
+        float angle, delta, length, speed, trackWidth, sidewaysPos;
+
+        Obstacle(std::vector<glm::vec2>& track, float trackWidth);
+        virtual void Update(float deltaTime);
+        virtual glm::vec3 GetPosition();
+        virtual glm::mat4 GetModelMatrix();
+    };
 }

@@ -59,3 +59,36 @@ void Complex::AddMesh(std::string id, glm::mat4 modelMatrix, Texture2D* texture,
 }
 
 void Complex::Update(float deltaTime) {}
+
+// OBSTACLE
+
+Obstacle::Obstacle(std::vector<glm::vec2>& track, float trackWidth) : color(rand() % 100 / 100.f, rand() % 100 / 100.f, rand() % 100 / 100.f),
+    track(track), speed(rand() % 100 / 10.f + 5), trackWidth(trackWidth * .4f), sidewaysPos(rand() % 100 / 50.f - 1) {
+    point = rand() % track.size();
+    delta = length = 0;
+    Update(.1f);
+}
+
+void Obstacle::Update(float deltaTime) {
+    delta += speed * deltaTime;
+    if (delta > length) {
+        delta -= length;
+        if (--point < 0) point = track.size() - 1;
+
+        glm::vec2 from = track[point], to = track[point == 0 ? track.size() - 1 : point - 1];
+        dir = glm::normalize(to - from);
+        length = glm::length(to - from);
+
+        angle = acosf(dir.y);
+        if (dir.x > 0) angle = 2 * M_PI - angle;
+    }
+}
+
+glm::vec3 Obstacle::GetPosition() {
+    const auto pos2 = track[point] + delta * dir + glm::normalize(glm::vec2(-dir.y, dir.x)) * sidewaysPos * trackWidth;
+    return glm::vec3(pos2.x, .65f, pos2.y);
+}
+
+glm::mat4 Obstacle::GetModelMatrix() {
+    return transform3D::Translate(GetPosition()) * transform3D::RotateOY(angle);
+}

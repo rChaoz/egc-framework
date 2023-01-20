@@ -199,6 +199,16 @@ void Tema2::Init() {
         tree->AddMesh(mesh, transform3D::Scale(2.2f)* transform3D::RotateOZ(-M_PI_2));
 
         complexObjects["tree"] = tree;
+
+        Complex* obstacle = new Complex(meshes);
+
+        mesh = new Mesh("obstacle");
+        mesh->LoadMesh(PATH_JOIN(window->props.selfDir, RESOURCE_PATH::MODELS, "primitives"), "box.obj");
+        obstacle->AddMesh(mesh);
+
+        complexObjects["obstacle"] = obstacle;
+
+        for (int i = 0; i < 5; ++i) obstacles.push_back(new Obstacle(track, TRACK_WIDTH));
     }
 
     // Create car
@@ -260,6 +270,16 @@ void Tema2::Update(float deltaTimeSeconds) {
     // Camera follows car
     camera->Set(car->position + glm::vec3(0, 4, 0) - car->Forward() * 5.f, car->position, glm::vec3(0, 1, 0));
 
+    // Moving obstacles & checking collisions
+    for (auto o : obstacles) {
+        o->Update(deltaTimeSeconds);
+        if (glm::length(car->position - o->GetPosition()) < 1.5f) {
+            // Stop the car
+            if (redFlash > 1) redFlash = 0;
+            speed = angularSpeed = 0;
+        }
+    }
+
     // RENDERING
     car->scale = glm::vec3(1);
     SendUniforms(0);
@@ -286,6 +306,7 @@ void Tema2::Render(float deltaTimeSeconds) {
     }
     glUniform1i(glGetUniformLocation(shaders["default"]->program, "shinyness"), 3);
     RenderComplex("car", deltaTimeSeconds);
+    for (auto o : obstacles) RenderColoredMesh(meshes["obstacle"], o->GetModelMatrix(), o->color);
 }
 
 

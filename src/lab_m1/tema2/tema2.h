@@ -44,6 +44,8 @@ namespace m1
         std::vector<glm::vec2> track;
         std::vector<std::pair<glm::vec2, float>> trees;
 
+        std::vector<tema2::Obstacle*> obstacles;
+
         static constexpr float ACCELERATION = 5.f, ANGULAR_ACCELERATION = 7.f, BREAK = 15.f, SLOW = 1.f,
             TOP_SPEED = 25.f, TOP_REVERSE_SPEED = 6.f,
             TURN_RATIO = .2f, MAX_TURN = 1.3f;
