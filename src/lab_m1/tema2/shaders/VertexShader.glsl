@@ -10,6 +10,8 @@ layout(location = 3) in vec3 v_color;
 uniform mat4 Model;
 uniform mat4 View;
 uniform mat4 Projection;
+uniform vec3 eye_position;
+uniform float scaleFactor;
 
 // Output
 out vec3 f_color;
@@ -24,5 +26,9 @@ void main() {
     vec4 pos = vec4(v_position, 1);
     world_position = (Model * pos).xyz;
     world_normal = (Model * vec4(v_normal, 0)).xyz;
-    gl_Position = Projection * View * Model * pos;
+
+    // Effect
+    vec4 worldPos = Model * pos;
+    worldPos.y -= pow(length(vec4(eye_position, 1) - worldPos), 2) * scaleFactor;
+    gl_Position = Projection * View * worldPos;
 }

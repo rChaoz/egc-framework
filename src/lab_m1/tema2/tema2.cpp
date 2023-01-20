@@ -25,7 +25,7 @@ void Tema2::Init() {
     // Init cameras
     camera = new implemented::Camera();
     minimapCamera = new implemented::Camera();
-    minimapCamera->Set(glm::vec3(0, 50, 0), glm::vec3(0, 0, 0), glm::vec3(0, 50, 13.5f));
+    minimapCamera->Set(glm::vec3(-12, 50, -5), glm::vec3(-12, 0, -5), glm::vec3(0, 50, 13.5f));
 
     const string sourceTextureDir = PATH_JOIN(window->props.selfDir, SOURCE_PATH::M1, "tema2", "textures");
     const string sourceModelsDir = PATH_JOIN(window->props.selfDir, SOURCE_PATH::M1, "tema2", "models");
@@ -37,35 +37,23 @@ void Tema2::Init() {
         texture->Load2D(PATH_JOIN(sourceTextureDir, "grass.jpg").c_str(), GL_REPEAT);
         mapTextures["ground"] = texture;
 
-        vector<glm::vec3> vertices
-        {
-            glm::vec3(100,  0,  100),    // top right
-            glm::vec3(100,  0, -100),    // bottom right
-            glm::vec3(-100, 0, -100),    // bottom left
-            glm::vec3(-100, 0,  100),    // top left
-        };
+        vector<glm::vec3> vertices;
+        vector<glm::vec3> normals;
+        vector<glm::vec2> textureCoords;
+        vector<unsigned int> indices;
 
-        vector<glm::vec3> normals
-        {
-            glm::vec3(0, 1, 0),
-            glm::vec3(0, 1, 0),
-            glm::vec3(0, 1, 0),
-            glm::vec3(0, 1, 0),
-        };
-
-        vector<glm::vec2> textureCoords
-        {
-            glm::vec2(100, 100),
-            glm::vec2(100, 0),
-            glm::vec2(0, 0),
-            glm::vec2(0, 100),
-        };
-
-        vector<unsigned int> indices =
-        {
-            0, 1, 3,
-            1, 2, 3
-        };
+        int i, j;
+        for (i = 0; i <= 200; ++i) {
+            for (j = 0; j <= 200; ++j) {
+                vertices.push_back(glm::vec3(i - 100, 0, j - 100));
+                textureCoords.push_back(glm::vec2(i / 2.f, j / 2.f));
+                normals.push_back(glm::vec3(0, 1, 0));
+                if (i != 0 && j != 0) {
+                    indices.push_back(201 * (i - 1) + j - 1), indices.push_back(201 * (i - 1) + j), indices.push_back(201 * i + j);
+                    indices.push_back(201 * (i - 1) + j - 1), indices.push_back(201 * i + j), indices.push_back(201 * i + j - 1);
+                }
+            }
+        }
 
         Mesh* mesh = new Mesh("ground");
         mesh->InitFromData(vertices, normals, textureCoords, indices);
@@ -216,9 +204,11 @@ void Tema2::Update(float deltaTimeSeconds) {
     camera->Set(car->position + glm::vec3(0, 4, 0) - car->Forward() * 5.f, car->position, glm::vec3(0, 1, 0));
 
     // RENDERING
+    car->scale = glm::vec3(1);
     SendUniforms(0);
     Render(deltaTimeSeconds);
     // Minimap
+    car->scale = glm::vec3(2);
     const auto res = window->GetResolution();
     const float w = res.x / 4, h = res.y / 4;
     glViewport(res.x - w, 0, w, h);
@@ -343,6 +333,7 @@ void Tema2::SendUniforms(int cam) {
     glUniform3fv(glGetUniformLocation(shader->program, "eye_position"), 1, glm::value_ptr(camera->position));
     glUniform1i(glGetUniformLocation(shader->program, "shinyness"), 1);
     glUniform1i(glGetUniformLocation(shader->program, "useSpecular"), cam != 1);
+    glUniform1f(glGetUniformLocation(shader->program, "scaleFactor"), cam == 0 ? SCALE_FACTOR : 0);
 }
 
 
