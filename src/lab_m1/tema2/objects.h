@@ -34,6 +34,7 @@ namespace tema2 {
         glm::vec3 position, angle, scale, overrideColor;
 
         virtual glm::mat4 GetModelMatrix();
+        virtual glm::vec3 Forward();
         virtual bool Touches(const Complex* another);
         virtual void AddMesh(std::string id, glm::mat4 modelMatrix = glm::mat4(1), Texture2D* texture = NULL, bool visible = true);
         virtual void AddMesh(Mesh* mesh, glm::mat4 modelMatrix = glm::mat4(1), Texture2D* texture = NULL, bool visible = true);

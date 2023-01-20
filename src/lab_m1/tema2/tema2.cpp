@@ -1,4 +1,5 @@
 #include "lab_m1/Tema2/Tema2.h"
+#include "components/transform.h"
 
 #include <vector>
 #include <string>
@@ -20,7 +21,11 @@ Tema2::~Tema2() {
 
 
 void Tema2::Init() {
+    // Init camera
+    camera = new implemented::Camera();
+
     const string sourceTextureDir = PATH_JOIN(window->props.selfDir, SOURCE_PATH::M1, "tema2", "textures");
+    const string sourceModelsDir = PATH_JOIN(window->props.selfDir, SOURCE_PATH::M1, "tema2", "models");
     const string sourceShaderDir = PATH_JOIN(window->props.selfDir, SOURCE_PATH::M1, "tema2", "shaders");
 
     // Create ground
@@ -161,6 +166,15 @@ void Tema2::Init() {
         AddMeshToList(mesh);
     }
 
+    // Create car
+    {
+        Complex* car = new Complex(meshes, glm::vec3(.6f, .26f, .08f));
+        Mesh* mesh = new Mesh("car");
+        mesh->LoadMesh(sourceModelsDir, "car.stl");
+        car->AddMesh(mesh, transform3D::Translate(1.35f, 8.2f, -11) * transform3D::Scale(.1f) * transform3D::Rotate(0, M_PI_2, M_PI));
+        complexObjects["car"] = car;
+    }
+
     // Load shaders
     {
         Shader* shader = new Shader("default");
@@ -184,9 +198,17 @@ void Tema2::FrameStart() {
 
 
 void Tema2::Update(float deltaTimeSeconds) {
+    // GAME LOGIC
+    const auto car = complexObjects["car"];
+    
+    // Camera follows car
+    camera->Set(car->position + glm::vec3(0, 5, 0) - car->Forward() * 6.f, car->position, glm::vec3(0, 1, 0));
+
     // RENDERING
     SendUniforms();
     RenderGround();
+    glUniform1i(glGetUniformLocation(shaders["default"]->program, "shinyness"), 2);
+    RenderComplex("car", deltaTimeSeconds);
 }
 
 
@@ -282,14 +304,18 @@ void Tema2::SendUniforms() {
     shader->Use();
 
     // Bind view matrix
-    glm::mat4 viewMatrix = GetSceneCamera()->GetViewMatrix();
+    glm::mat4 viewMatrix = camera->GetViewMatrix();
     int loc_view_matrix = glGetUniformLocation(shader->program, "View");
     glUniformMatrix4fv(loc_view_matrix, 1, GL_FALSE, glm::value_ptr(viewMatrix));
 
     // Bind projection matrix
-    glm::mat4 projectionMatrix = GetSceneCamera()->GetProjectionMatrix();
+    glm::mat4 projectionMatrix = glm::perspective(RADIANS(90), window->props.aspectRatio, 0.01f, 300.0f);
     int loc_projection_matrix = glGetUniformLocation(shader->program, "Projection");
     glUniformMatrix4fv(loc_projection_matrix, 1, GL_FALSE, glm::value_ptr(projectionMatrix));
+
+    // Bind camera position & shinyness
+    glUniform3fv(glGetUniformLocation(shader->program, "eye_position"), 1, glm::value_ptr(GetSceneCamera()->m_transform->GetWorldPosition()));
+    glUniform1i(glGetUniformLocation(shader->program, "shinyness"), 1);
 }
 
 

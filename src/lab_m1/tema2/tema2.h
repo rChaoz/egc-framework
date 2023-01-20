@@ -5,6 +5,7 @@
 #include "components/simple_scene.h"
 #include "objects.h"
 #include "lab_m1/lab4/transform3D.h"
+#include "lab_m1/lab5/lab_camera.h"
 
 namespace m1
 {
@@ -38,6 +39,10 @@ namespace m1
         void OnWindowResize(int width, int height) override;
 
         static constexpr float TRACK_WIDTH = 5.f;
+
+        implemented::Camera* camera;
+        glm::vec2 startingPosition;
+        float startingAngle;
 
         std::unordered_map<std::string, Texture2D*> mapTextures;
         std::unordered_map<std::string, tema2::Complex*> complexObjects;

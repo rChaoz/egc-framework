@@ -14,9 +14,15 @@ uniform mat4 Projection;
 // Output
 out vec3 f_color;
 out vec2 f_tex_coord;
+out vec3 world_position;
+out vec3 world_normal;
 
 void main() {
     f_color = v_color;
     f_tex_coord = v_texture_coord;
-    gl_Position = Projection * View * Model * vec4(v_position, 1);
+
+    vec4 pos = vec4(v_position, 1);
+    world_position = (Model * pos).xyz;
+    world_normal = (Model * vec4(v_normal, 0)).xyz;
+    gl_Position = Projection * View * Model * pos;
 }

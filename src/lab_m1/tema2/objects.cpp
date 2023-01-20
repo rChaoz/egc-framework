@@ -33,6 +33,10 @@ glm::mat4 Complex::GetModelMatrix() {
         * transform3D::Scale(scale.x, scale.y, scale.z);
 }
 
+glm::vec3 Complex::Forward() {
+    return glm::vec3(sinf(angle.y), 0, cosf(angle.y));
+}
+
 bool Complex::Touches(const Complex* another) {
     const float distance = glm::length(position - another->position);
     return distance < radius + another->radius;

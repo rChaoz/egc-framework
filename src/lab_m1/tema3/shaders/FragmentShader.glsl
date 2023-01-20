@@ -35,9 +35,6 @@ void main() {
 	    color = texColor.rgb;
     }
 
-    //out_color = vec4(color, 1);
-    //return;
-
     // LIGHTING
     float ambient = .2f, diffuse = 0, specular = 0;
     vec3 N = normalize(world_normal);
