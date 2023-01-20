@@ -70,6 +70,7 @@ void Tema2::Init() {
         // Variables
         vector<glm::vec2> vertices;
         vector<unsigned int> indices;
+        vector<glm::vec2> possibleTrees;
 
         // Read & process points file
         ifstream points(PATH_JOIN(window->props.selfDir, SOURCE_PATH::M1, "tema2", "track.txt").c_str());
@@ -122,14 +123,16 @@ void Tema2::Init() {
             vertices.push_back(from1);
             vertices.push_back(from2);
             // Create line (rectangle) starting at 'from' ending at 'to'
-            int splits = glm::length(to - from) / .1f;
+            int splits = glm::length(to - from) / .2f;
             glm::vec2 to1 = to + pTo, to2 = to - pTo;
+            glm::vec2 dir = (to - from) / static_cast<float>(splits / 10);
             glm::vec2 dir1 = (to1 - from1) / static_cast<float>(splits);
             glm::vec2 dir2 = (to2 - from2) / static_cast<float>(splits);
 
-            glm::vec2 p1 = from1, p2 = from2; // points 1 & 2
+            glm::vec2 p = from, p1 = from1, p2 = from2; // points 1 & 2
             for (int i = 0; i < splits; ++i) {
                 glm::vec2 n1 = p1 + dir1, n2 = p2 + dir2; // next points 1 & 2
+                if (i == splits - 1) n1 = to1, n2 = to2;
                 int offset = vertices.size();
                 vertices.push_back(n1); // offset     (offset - 2 for next point)
                 vertices.push_back(n2); // offset + 1 (offset - 1 for next point)
@@ -138,6 +141,23 @@ void Tema2::Init() {
                 indices.push_back(offset - 2), indices.push_back(offset + 1), indices.push_back(offset - 1);
 
                 p1 = n1, p2 = n2;
+
+                if (i % 10) {
+                    // Remember track points
+                    p += dir;
+                    track.push_back(p);
+                }
+
+                // Spawn trees (but not on top of each other)
+                if (rand() % 1000 < TREE_CHANCE) {
+                    const auto pos = p1 + pTo * (rand() % 100 / 5.f) * (rand() % 2 * 2 - 1.f);
+                    bool overlaps = false;
+                    for (auto tree : possibleTrees) if (glm::length(pos - tree) < 5.f) {
+                        overlaps = true;
+                        break;
+                    }
+                    if (!overlaps) possibleTrees.push_back(pos);
+                }
             }
 
             // Update vars that hold previous-point values
@@ -159,6 +179,28 @@ void Tema2::Init() {
         //mesh->InitFromData(v, indices);
         mesh->InitFromData(verts, normals, textureCoords, indices);
         AddMeshToList(mesh);
+
+        // Place trees
+        for (auto v : possibleTrees) {
+            // Check it's not inside the track
+            bool inside = false;
+            for (auto point : track) if (glm::length(v - point) < TRACK_WIDTH * .6f) {
+                inside = true;
+                break;
+            }
+            if (!inside) trees.push_back(pair<glm::vec2, float>(v, rand() % 6283 / 1000.f));
+        }
+    }
+
+    // Load obstacles
+    {
+        Complex* tree = new Complex(meshes);
+
+        Mesh* mesh = new Mesh("tree");
+        mesh->LoadMesh(sourceModelsDir, "Tree N161113.3ds");
+        tree->AddMesh(mesh, transform3D::Scale(2.2f)* transform3D::RotateOZ(-M_PI_2));
+
+        complexObjects["tree"] = tree;
     }
 
     // Create car
@@ -221,6 +263,14 @@ void Tema2::Render(float deltaTimeSeconds) {
     RenderGround();
     glUniform1i(glGetUniformLocation(shaders["default"]->program, "shinyness"), 2);
     RenderComplex("car", deltaTimeSeconds);
+    RenderComplex("tree", deltaTimeSeconds);
+    auto c = complexObjects["tree"];
+    for (auto tree : trees) {
+        c->position.x = tree.first.x;
+        c->position.z = tree.first.y;
+        c->angle.y = tree.second;
+        RenderComplex("tree", deltaTimeSeconds);
+    }
 }
 
 
@@ -353,16 +403,18 @@ void Tema2::OnInputUpdate(float deltaTime, int mods) {
     else if (speed < -TOP_REVERSE_SPEED) speed = -TOP_REVERSE_SPEED;
 
     const auto car = complexObjects["car"];
+    const float spd = abs(speed);
     if (window->KeyHold(GLFW_KEY_A)) angularSpeed -= ANGULAR_ACCELERATION * deltaTime;
     else if (window->KeyHold(GLFW_KEY_D)) angularSpeed += ANGULAR_ACCELERATION * deltaTime;
     else if (angularSpeed > 0) angularSpeed = max(angularSpeed - ANGULAR_ACCELERATION * deltaTime, 0.f);
     else if (angularSpeed < 0) angularSpeed = min(angularSpeed + ANGULAR_ACCELERATION * deltaTime, 0.f);
 
-    if (angularSpeed > speed * TURN_RATIO) angularSpeed = speed * TURN_RATIO;
-    else if (angularSpeed < -speed * TURN_RATIO) angularSpeed = -speed * TURN_RATIO;
+    if (angularSpeed > spd * TURN_RATIO) angularSpeed = spd * TURN_RATIO;
+    else if (angularSpeed < -spd * TURN_RATIO) angularSpeed = -spd * TURN_RATIO;
     if (angularSpeed > MAX_TURN) angularSpeed = MAX_TURN;
     else if (angularSpeed < -MAX_TURN) angularSpeed = -MAX_TURN;
-    car->angle.y += angularSpeed * deltaTime;
+    if (speed > 0) car->angle.y += angularSpeed * deltaTime;
+    else car->angle.y -= angularSpeed * deltaTime;;
 }
 
 

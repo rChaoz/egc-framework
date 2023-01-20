@@ -40,6 +40,9 @@ namespace m1
         void OnWindowResize(int width, int height) override;
 
         static constexpr float TRACK_WIDTH = 7.f, SCALE_FACTOR = .003f;
+        static const int TREE_CHANCE = 200;
+        std::vector<glm::vec2> track;
+        std::vector<std::pair<glm::vec2, float>> trees;
 
         static constexpr float ACCELERATION = 5.f, ANGULAR_ACCELERATION = 7.f, BREAK = 15.f, SLOW = 1.f,
             TOP_SPEED = 25.f, TOP_REVERSE_SPEED = 4.f,

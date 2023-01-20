@@ -19,7 +19,11 @@ uniform vec3 eye_position;
 
 void main() {
     vec3 color;
-    if (useTexture != 0) color = texture2D(u_texture_0, f_tex_coord).rgb;
+    if (useTexture != 0) {
+        vec4 tex_color = texture2D(u_texture_0, f_tex_coord);
+        if (tex_color.a < .9f) discard;
+        color = texture2D(u_texture_0, f_tex_coord).rgb;
+    }
     else if (overrideColor.r > 1 || overrideColor.g > 1 || overrideColor.b > 1) color = f_color;
     else color = overrideColor;
 

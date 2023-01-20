@@ -21,9 +21,9 @@ namespace tema2 {
     class Complex {
     protected:
         std::unordered_map<std::string, Mesh*>& const worldMeshMap;
-        bool deleteMeshes;
 
     public:
+        bool deleteMeshes;
         std::unordered_map<std::string, ComplexMesh> meshes;
 
         Complex(std::unordered_map<std::string, Mesh*>& worldMeshMap, glm::vec3 &overrideColor = glm::vec3(2, 2, 2));
