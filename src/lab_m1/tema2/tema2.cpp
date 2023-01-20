@@ -12,6 +12,7 @@ using namespace tema2;
 
 
 Tema2::Tema2() {
+    speed = 0;
 }
 
 
@@ -100,6 +101,10 @@ void Tema2::Init() {
                 pFrom = to - from;
                 pStart = pFrom = glm::normalize(glm::vec2(-pFrom.y, pFrom.x)) * (TRACK_WIDTH / 2);
                 first = from = to;
+                // Set starting point
+                startingPosition = glm::vec3(start.x, 0, start.y);
+                glm::vec2 forward = first - start;
+                startingForward = glm::vec3(forward.x, 0, forward.y);
                 continue; // don't draw any lines
             }
             else if (status == 1) {
@@ -171,8 +176,11 @@ void Tema2::Init() {
         Complex* car = new Complex(meshes, glm::vec3(.6f, .26f, .08f));
         Mesh* mesh = new Mesh("car");
         mesh->LoadMesh(sourceModelsDir, "car.stl");
-        car->AddMesh(mesh, transform3D::Translate(1.35f, 8.2f, -11) * transform3D::Scale(.1f) * transform3D::Rotate(0, M_PI_2, M_PI));
+        car->AddMesh(mesh, transform3D::Translate(.68f, 4.1f, -5.5f) * transform3D::Scale(.05f) * transform3D::Rotate(0, M_PI_2, M_PI));
         complexObjects["car"] = car;
+
+        car->position = startingPosition;
+        car->SetForward(startingForward);
     }
 
     // Load shaders
@@ -188,7 +196,7 @@ void Tema2::Init() {
 
 void Tema2::FrameStart() {
     // Clears the color buffer (using the previously set color) and depth buffer
-    glClearColor(0, 0, 0, 1);
+    glClearColor(0, 0.03f, 0.15f, 1);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     glm::ivec2 resolution = window->GetResolution();
@@ -200,6 +208,7 @@ void Tema2::FrameStart() {
 void Tema2::Update(float deltaTimeSeconds) {
     // GAME LOGIC
     const auto car = complexObjects["car"];
+    car->position += car->Forward() * speed * deltaTimeSeconds;
     
     // Camera follows car
     camera->Set(car->position + glm::vec3(0, 5, 0) - car->Forward() * 6.f, car->position, glm::vec3(0, 1, 0));
@@ -298,18 +307,18 @@ void Tema2::RenderComplex(Complex* c, float deltaTime, const glm::mat4 modelMatr
     }
 }
 
-void Tema2::SendUniforms() {
+void Tema2::SendUniforms(bool freeCam) {
     // Apply shaders
     const auto shader = shaders["default"];
     shader->Use();
 
     // Bind view matrix
-    glm::mat4 viewMatrix = camera->GetViewMatrix();
+    glm::mat4 viewMatrix = freeCam ? GetSceneCamera()->GetViewMatrix() : camera->GetViewMatrix();
     int loc_view_matrix = glGetUniformLocation(shader->program, "View");
     glUniformMatrix4fv(loc_view_matrix, 1, GL_FALSE, glm::value_ptr(viewMatrix));
 
     // Bind projection matrix
-    glm::mat4 projectionMatrix = glm::perspective(RADIANS(90), window->props.aspectRatio, 0.01f, 300.0f);
+    glm::mat4 projectionMatrix = freeCam ? GetSceneCamera()->GetProjectionMatrix() : glm::perspective(RADIANS(90), window->props.aspectRatio, 0.01f, 300.0f);
     int loc_projection_matrix = glGetUniformLocation(shader->program, "Projection");
     glUniformMatrix4fv(loc_projection_matrix, 1, GL_FALSE, glm::value_ptr(projectionMatrix));
 
@@ -320,6 +329,23 @@ void Tema2::SendUniforms() {
 
 
 void Tema2::OnInputUpdate(float deltaTime, int mods) {
+    if (window->KeyHold(GLFW_KEY_W)) speed += ACCELERATION * deltaTime;
+    else if (window->KeyHold(GLFW_KEY_S)) {
+        if (speed > 0) speed = max(speed - BREAK * deltaTime, 0.f);
+        else speed -= ACCELERATION * deltaTime;
+    }
+    else {
+        if (speed > 0) speed = max(speed - SLOW * deltaTime, 0.f);
+        else if (speed < 0) speed = min(speed + SLOW * deltaTime, 0.f);
+    }
+
+    if (speed > TOP_SPEED) speed = TOP_SPEED;
+    else if (speed < -TOP_REVERSE_SPEED) speed = -TOP_REVERSE_SPEED;
+
+    const auto car = complexObjects["car"];
+    const float turn = min(deltaTime * speed * TURN_RATIO, MAX_TURN);
+    if (window->KeyHold(GLFW_KEY_A)) car->angle.y -= turn;
+    if (window->KeyHold(GLFW_KEY_D)) car->angle.y += turn;
 }
 
 

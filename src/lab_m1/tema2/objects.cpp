@@ -34,7 +34,13 @@ glm::mat4 Complex::GetModelMatrix() {
 }
 
 glm::vec3 Complex::Forward() {
-    return glm::vec3(sinf(angle.y), 0, cosf(angle.y));
+    return glm::vec3(-sinf(angle.y), 0, cosf(angle.y));
+}
+
+void Complex::SetForward(glm::vec3 forward) {
+    forward = glm::normalize(forward);
+    angle.y = acosf(angle.z);
+    if (forward.x > 0) angle.y = 2 * M_PI - angle.y;
 }
 
 bool Complex::Touches(const Complex* another) {
