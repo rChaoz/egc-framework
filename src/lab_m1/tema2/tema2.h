@@ -19,6 +19,7 @@ namespace m1
      private:
         void FrameStart() override;
         void Update(float deltaTimeSeconds) override;
+        virtual void Render(float deltaTimeSeconds);
         void FrameEnd() override;
 
         void RenderGround();
@@ -27,7 +28,7 @@ namespace m1
         void RenderColoredMesh(Mesh* mesh, const glm::mat4& modelMatrix = glm::mat4(1), const glm::vec3& color = glm::vec3(2, 2, 2));
         void RenderComplex(std::string name, float deltaTime, const glm::mat4 modelMatrix = glm::mat4(1));
         void RenderComplex(tema2::Complex* c, float deltaTime, const glm::mat4 modelMatrix = glm::mat4(1));
-        void SendUniforms(bool freeCam = false);
+        void SendUniforms(int cam);
 
         void OnInputUpdate(float deltaTime, int mods) override;
         void OnKeyPress(int key, int mods) override;
@@ -38,12 +39,14 @@ namespace m1
         void OnMouseScroll(int mouseX, int mouseY, int offsetX, int offsetY) override;
         void OnWindowResize(int width, int height) override;
 
-        static constexpr float TRACK_WIDTH = 8.f;
+        static constexpr float TRACK_WIDTH = 7.f;
 
-        static constexpr float ACCELERATION = 5.f, BREAK = 20.f, SLOW = 1.f, TOP_SPEED = 20.f, TOP_REVERSE_SPEED = 4.f, TURN_RATIO = .2f, MAX_TURN = .008f;
-        float speed;
+        static constexpr float ACCELERATION = 5.f, ANGULAR_ACCELERATION = 7.f, BREAK = 15.f, SLOW = 1.f,
+            TOP_SPEED = 25.f, TOP_REVERSE_SPEED = 4.f,
+            TURN_RATIO = .2f, MAX_TURN = 1.3f;
+        float speed, angularSpeed;
 
-        implemented::Camera* camera;
+        implemented::Camera* camera, *minimapCamera;
         glm::vec3 startingPosition, startingForward;
 
         std::unordered_map<std::string, Texture2D*> mapTextures;

@@ -11,6 +11,7 @@ layout(location = 0) out vec4 out_color;
 
 // Uniforms
 uniform int useTexture;
+uniform int useSpecular;
 uniform int shinyness;
 uniform sampler2D u_texture_0;
 uniform vec3 overrideColor;
@@ -28,9 +29,9 @@ void main() {
     vec3 V = normalize(eye_position - world_position);
 
     // Directional light (sun)
-    vec3 L = vec3(.5f, 3, 1);
-    diffuse += .9f * max(dot(N, normalize(L)), 0);
-    if (dot(N, L) > 0) specular += .15f * pow(max(dot(V, reflect (-L, N)), 0), shinyness);
+    vec3 L = normalize(vec3(.5f, 3, 1));
+    diffuse += .9f * max(dot(N, L), 0);
+    if (useSpecular != 0 && dot(N, L) > 0) specular += .4f * pow(max(dot(V, reflect (-L, N)), 0), shinyness);
 
     out_color = vec4(color * (ambient + diffuse + specular), 1);
 }

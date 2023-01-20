@@ -12,7 +12,7 @@ using namespace tema2;
 
 
 Tema2::Tema2() {
-    speed = 0;
+    speed = angularSpeed = 0;
 }
 
 
@@ -22,8 +22,10 @@ Tema2::~Tema2() {
 
 
 void Tema2::Init() {
-    // Init camera
+    // Init cameras
     camera = new implemented::Camera();
+    minimapCamera = new implemented::Camera();
+    minimapCamera->Set(glm::vec3(0, 50, 0), glm::vec3(0, 0, 0), glm::vec3(0, 50, 13.5f));
 
     const string sourceTextureDir = PATH_JOIN(window->props.selfDir, SOURCE_PATH::M1, "tema2", "textures");
     const string sourceModelsDir = PATH_JOIN(window->props.selfDir, SOURCE_PATH::M1, "tema2", "models");
@@ -211,10 +213,21 @@ void Tema2::Update(float deltaTimeSeconds) {
     car->position += car->Forward() * speed * deltaTimeSeconds;
     
     // Camera follows car
-    camera->Set(car->position + glm::vec3(0, 5, 0) - car->Forward() * 6.f, car->position, glm::vec3(0, 1, 0));
+    camera->Set(car->position + glm::vec3(0, 4, 0) - car->Forward() * 5.f, car->position, glm::vec3(0, 1, 0));
 
     // RENDERING
-    SendUniforms();
+    SendUniforms(0);
+    Render(deltaTimeSeconds);
+    // Minimap
+    const auto res = window->GetResolution();
+    const float w = res.x / 4, h = res.y / 4;
+    glViewport(res.x - w, 0, w, h);
+    glClear(GL_DEPTH_BUFFER_BIT);
+    SendUniforms(1);
+    Render(deltaTimeSeconds);
+}
+
+void Tema2::Render(float deltaTimeSeconds) {
     RenderGround();
     glUniform1i(glGetUniformLocation(shaders["default"]->program, "shinyness"), 2);
     RenderComplex("car", deltaTimeSeconds);
@@ -307,28 +320,34 @@ void Tema2::RenderComplex(Complex* c, float deltaTime, const glm::mat4 modelMatr
     }
 }
 
-void Tema2::SendUniforms(bool freeCam) {
+// 0 - normal (player) cam
+// 1 - minimap camera
+// 2 - free camera (use instead of 0 for debug)
+void Tema2::SendUniforms(int cam) {
     // Apply shaders
     const auto shader = shaders["default"];
     shader->Use();
 
     // Bind view matrix
-    glm::mat4 viewMatrix = freeCam ? GetSceneCamera()->GetViewMatrix() : camera->GetViewMatrix();
+    glm::mat4 viewMatrix = cam == 0 ? camera->GetViewMatrix() : cam == 1 ? minimapCamera->GetViewMatrix() : GetSceneCamera()->GetViewMatrix();
     int loc_view_matrix = glGetUniformLocation(shader->program, "View");
     glUniformMatrix4fv(loc_view_matrix, 1, GL_FALSE, glm::value_ptr(viewMatrix));
 
     // Bind projection matrix
-    glm::mat4 projectionMatrix = freeCam ? GetSceneCamera()->GetProjectionMatrix() : glm::perspective(RADIANS(90), window->props.aspectRatio, 0.01f, 300.0f);
+    glm::mat4 projectionMatrix = cam == 0 ? glm::perspective(RADIANS(90), window->props.aspectRatio, 0.01f, 300.0f) : cam == 1
+        ? glm::ortho(-72.f, 72.f, -40.5f, 40.5f, .1f, 100.f) : GetSceneCamera()->GetProjectionMatrix();
     int loc_projection_matrix = glGetUniformLocation(shader->program, "Projection");
     glUniformMatrix4fv(loc_projection_matrix, 1, GL_FALSE, glm::value_ptr(projectionMatrix));
 
     // Bind camera position & shinyness
-    glUniform3fv(glGetUniformLocation(shader->program, "eye_position"), 1, glm::value_ptr(GetSceneCamera()->m_transform->GetWorldPosition()));
+    glUniform3fv(glGetUniformLocation(shader->program, "eye_position"), 1, glm::value_ptr(camera->position));
     glUniform1i(glGetUniformLocation(shader->program, "shinyness"), 1);
+    glUniform1i(glGetUniformLocation(shader->program, "useSpecular"), cam != 1);
 }
 
 
 void Tema2::OnInputUpdate(float deltaTime, int mods) {
+    if (deltaTime > 5 || deltaTime < 0) return;
     if (window->KeyHold(GLFW_KEY_W)) speed += ACCELERATION * deltaTime;
     else if (window->KeyHold(GLFW_KEY_S)) {
         if (speed > 0) speed = max(speed - BREAK * deltaTime, 0.f);
@@ -343,9 +362,16 @@ void Tema2::OnInputUpdate(float deltaTime, int mods) {
     else if (speed < -TOP_REVERSE_SPEED) speed = -TOP_REVERSE_SPEED;
 
     const auto car = complexObjects["car"];
-    const float turn = min(deltaTime * speed * TURN_RATIO, MAX_TURN);
-    if (window->KeyHold(GLFW_KEY_A)) car->angle.y -= turn;
-    if (window->KeyHold(GLFW_KEY_D)) car->angle.y += turn;
+    if (window->KeyHold(GLFW_KEY_A)) angularSpeed -= ANGULAR_ACCELERATION * deltaTime;
+    else if (window->KeyHold(GLFW_KEY_D)) angularSpeed += ANGULAR_ACCELERATION * deltaTime;
+    else if (angularSpeed > 0) angularSpeed = max(angularSpeed - ANGULAR_ACCELERATION * deltaTime, 0.f);
+    else if (angularSpeed < 0) angularSpeed = min(angularSpeed + ANGULAR_ACCELERATION * deltaTime, 0.f);
+
+    if (angularSpeed > speed * TURN_RATIO) angularSpeed = speed * TURN_RATIO;
+    else if (angularSpeed < -speed * TURN_RATIO) angularSpeed = -speed * TURN_RATIO;
+    if (angularSpeed > MAX_TURN) angularSpeed = MAX_TURN;
+    else if (angularSpeed < -MAX_TURN) angularSpeed = -MAX_TURN;
+    car->angle.y += angularSpeed * deltaTime;
 }
 
 
